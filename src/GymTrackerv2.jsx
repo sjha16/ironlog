@@ -753,9 +753,41 @@ export default function GymTracker() {
   const totalCustom     = Object.values(customExercises).flat().length;
   const allExerciseCount = Object.values(muscleGroups).reduce((s,g)=>s+g.exercises.length,0);
   const totalLogged     = Object.keys(weightLogs).length;
+  const removeLogForDay = useCallback((exId, selectedDay) => {
+  setWeightLogs(prev => {
+    const logs = prev[exId];
+    if (!logs) return prev;
 
-  const toggleExercise = useCallback(id => setCompletedExercises(p=>({...p,[id]:!p[id]})),[]);
+    const updatedLogs = { ...logs };
 
+    Object.keys(updatedLogs).forEach(key => {
+      if (key.startsWith(selectedDay)) {
+        delete updatedLogs[key];
+      }
+    });
+
+    return {
+      ...prev,
+      [exId]: updatedLogs
+    };
+  });
+}, []);
+
+  const toggleExercise = useCallback((exId) => {
+  setCompletedExercises(prev => {
+    const isNowSelected = !prev[exId];
+
+    // If deselecting → remove logs
+    if (!isNowSelected) {
+      removeLogForDay(exId, selectedDay);
+    }
+
+    return {
+      ...prev,
+      [exId]: isNowSelected
+    };
+  });
+}, [selectedDay, removeLogForDay]);
   // saveWeights: always uses TODAY's actual date regardless of which day is viewed
   const saveWeights = useCallback((exId, entries) => {
   const todayDate = new Date();
