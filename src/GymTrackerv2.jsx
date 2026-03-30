@@ -1,5 +1,4 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
-import { formatDate } from "react-calendar/dist/shared/dateFormatter.js";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
   CartesianGrid, ResponsiveContainer, ReferenceLine,
@@ -135,13 +134,7 @@ function isFutureDay(dayIdx) {
   return dayIdx > TODAY_IDX;
 }
 
-/**
- * Build a dateKey string the same way saveWeights does.
- * Format: "Mon · 3/27/2026"
- */
-function makeDateKey(dayName, dateStr) {
-  return `${dayName} · ${dateStr}`;
-}
+
 
 /**
  * Return the first day-of-week (Mon=0) offset for a given month.
@@ -706,6 +699,7 @@ export default function GymTracker() {
   const [selectedDay,              setSelectedDay]              = useState(today);
   const [completedExercises,       setCompletedExercises]       = useState({});
   const [weightLogs,               setWeightLogs]               = useState({});
+  console.log("PARENT weightLogs:", weightLogs);
   const [customExercises,          setCustomExercises]          = useState({});
   const [weeklySplit,              setWeeklySplit]              = useState(DEFAULT_SPLIT);
   const [modalExercise,            setModalExercise]            = useState(null);
