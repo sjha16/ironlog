@@ -775,7 +775,8 @@ export default function GymTracker() {
 
   const toggleExercise = useCallback((exId) => {
   setCompletedExercises(prev => {
-    const isNowSelected = !prev[exId];
+    const dayData = prev[selectedDay] || {};   // ✅ get data for this day
+    const isNowSelected = !dayData[exId];      // ✅ toggle only this day's value
 
     // If deselecting → remove logs
     if (!isNowSelected) {
@@ -784,7 +785,10 @@ export default function GymTracker() {
 
     return {
       ...prev,
-      [exId]: isNowSelected
+      [selectedDay]: {
+        ...dayData,
+        [exId]: isNowSelected
+      }
     };
   });
 }, [selectedDay, removeLogForDay]);
@@ -836,12 +840,17 @@ const selectedDayIndex = dayMap[selectedDay];
     }
   }));
 }, [selectedDay]);
-  const getLastLog = useCallback(exId => {
-    const logs = weightLogs[exId];
-    if (!logs) return null;
-    const keys = Object.keys(logs);
-    return keys.length ? logs[keys[keys.length-1]] : null;
-  }, [weightLogs]);
+
+  const getLogForSelectedDay = useCallback((exId, selectedDay) => {
+  const logs = weightLogs[exId];
+  if (!logs) return null;
+
+  const entry = Object.entries(logs).find(([key]) =>
+    key.startsWith(selectedDay)
+  );
+
+  return entry ? entry[1] : null;
+}, [weightLogs]);
 
   const addCustomExercise    = useCallback((ex,k)=>setCustomExercises(p=>({...p,[k]:[...(p[k]||[]),ex]})),[]);
   const deleteCustomExercise = useCallback((k,id)=>setCustomExercises(p=>({...p,[k]:(p[k]||[]).filter(e=>e.id!==id)})),[]);
@@ -893,8 +902,8 @@ const selectedDayIndex = dayMap[selectedDay];
 };
   // ── Exercise Card ──
   const ExerciseCard = useCallback(({ ex, group, showDelete }) => {
-    const done      = completedExercises[ex.id];
-    const lastLog   = getLastLog(ex.id);
+    const done = completedExercises[selectedDay]?.[ex.id];
+    const lastLog   = getLogForSelectedDay(ex.id, selectedDay);
     const muscleKey = ex.muscleGroup || Object.keys(muscleGroups).find(k=>muscleGroups[k].exercises.some(e=>e.id===ex.id));
     // Disable logging if viewing a future day
     const canLog    = !selectedIsFuture;
@@ -926,7 +935,7 @@ const selectedDayIndex = dayMap[selectedDay];
         </div>
       </div>
     );
-  }, [completedExercises, getLastLog, muscleGroups, toggleExercise, deleteCustomExercise, selectedIsFuture, today]);
+  }, [completedExercises, muscleGroups, toggleExercise, deleteCustomExercise, selectedIsFuture, today,getLogForSelectedDay,selectedDay]);
 
   if (loading) {
     return (
@@ -1169,7 +1178,7 @@ const selectedDayIndex = dayMap[selectedDay];
       </div>
 
       {/* MODALS */}
-      {modalExercise&&<WeightModal exercise={modalExercise} onClose={()=>setModalExercise(null)} onSave={entries=>saveWeights(modalExercise.id,entries)} existing={getLastLog(modalExercise.id)}/>}
+      {modalExercise&&<WeightModal exercise={modalExercise} onClose={()=>setModalExercise(null)} onSave={entries=>saveWeights(modalExercise.id,entries)} existing={getLogForSelectedDay(modalExercise.id,selectedDay)}/>}
       {showCustomModal&&<CustomExerciseModal muscleGroups={muscleGroups} defaultMuscle={customModalDefaultMuscle} onClose={()=>setShowCustomModal(false)} onSave={addCustomExercise}/>}
       {splitEditorDay&&<SplitEditorModal day={splitEditorDay} currentMuscles={weeklySplit[splitEditorDay]||[]} muscleGroups={muscleGroups} onClose={()=>setSplitEditorDay(null)} onSave={muscles=>setWeeklySplit(p=>({...p,[splitEditorDay]:muscles}))}/>}
     </div>
