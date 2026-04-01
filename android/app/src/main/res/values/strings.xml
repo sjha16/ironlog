@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ironlog</string>
+    <string name="title_activity_main">ironlog</string>
+    <string name="package_name">com.sumit.app</string>
+    <string name="custom_url_scheme">com.sumit.app</string>
+</resources>

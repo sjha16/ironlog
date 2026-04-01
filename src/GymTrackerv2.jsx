@@ -748,8 +748,13 @@ export default function GymTracker() {
 
   const todayMuscles    = weeklySplit[selectedDay] || [];
   const todayExercises  = todayMuscles.flatMap(mg => (muscleGroups[mg]?.exercises||[]).map(ex=>({...ex,muscleGroup:mg})));
-  const completedCount  = todayExercises.filter(e=>completedExercises[e.id]).length;
-  const progress        = todayExercises.length>0?(completedCount/todayExercises.length)*100:0;
+ const dayData = completedExercises[selectedDay] || {};
+
+const completedCount = todayExercises.filter(e => dayData[e.id]).length;
+
+const progress = todayExercises.length > 0
+  ? (completedCount / todayExercises.length) * 100
+  : 0;
   const totalCustom     = Object.values(customExercises).flat().length;
   const allExerciseCount = Object.values(muscleGroups).reduce((s,g)=>s+g.exercises.length,0);
   const totalLogged     = Object.keys(weightLogs).length;
