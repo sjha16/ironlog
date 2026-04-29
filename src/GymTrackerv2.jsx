@@ -1,4 +1,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Capacitor } from '@capacitor/core';
+import { Share } from '@capacitor/share';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
   CartesianGrid, ResponsiveContainer, ReferenceLine,
@@ -860,16 +863,60 @@ const selectedDayIndex = dayMap[selectedDay];
   const addCustomExercise    = useCallback((ex,k)=>setCustomExercises(p=>({...p,[k]:[...(p[k]||[]),ex]})),[]);
   const deleteCustomExercise = useCallback((k,id)=>setCustomExercises(p=>({...p,[k]:(p[k]||[]).filter(e=>e.id!==id)})),[]);
 
-  const handleBackup = () => {
-    const data = { completedExercises, weightLogs, customExercises, weeklySplit, exportedAt:new Date().toISOString() };
-    const blob = new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href=url; a.download=`ironlog-backup-${TODAY_DATE_STR.replace(/\//g,"-")}.json`;
-    a.click(); URL.revokeObjectURL(url);
-    setBackupMsg("✓ Backup downloaded successfully!");
-    setTimeout(()=>setBackupMsg(""),3500);
-  };
+
+const handleBackup = async () => {
+  try {
+    const data = {
+      completedExercises,
+      weightLogs,
+      customExercises,
+      weeklySplit,
+      exportedAt: new Date().toISOString()
+    };
+
+    const fileName = `ironlog-backup-${Date.now()}.json`;
+    const jsonData = JSON.stringify(data, null, 2);
+
+    if (Capacitor.getPlatform() === "web") {
+      const blob = new Blob([jsonData], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      a.click();
+
+      URL.revokeObjectURL(url);
+
+      setBackupMsg("✓ Backup downloaded!");
+    } else {
+      // 🔥 SAVE WITH UTF-8 (CRITICAL FIX)
+      await Filesystem.writeFile({
+        path: fileName,
+        data: jsonData,
+        directory: Directory.Cache,
+        encoding: Encoding.UTF8
+      });
+
+      const fileUri = await Filesystem.getUri({
+        directory: Directory.Cache,
+        path: fileName
+      });
+
+      await Share.share({
+        title: "IronLog Backup",
+        url: fileUri.uri
+      });
+
+      setBackupMsg("✓ Backup shared!");
+      setTimeout(() => setBackupMsg(""), 3500);
+    }
+
+  } catch (error) {
+    console.error("Backup error:", error);
+    setBackupMsg("❌ Backup failed");
+  }
+};
 
   const handleRestore = e => {
     const file=e.target.files[0]; if (!file) return;
