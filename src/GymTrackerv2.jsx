@@ -769,10 +769,7 @@ useEffect(() => {
 
   const todayMuscles    = weeklySplit[selectedDay] || [];
   const todayExercises  = todayMuscles.flatMap(mg => (muscleGroups[mg]?.exercises||[]).map(ex=>({...ex,muscleGroup:mg})));
- const getTodayDateStr = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-};
+ 
   const selectedDateStr = getTargetDateStr(selectedDay);
 
 const completedCount = todayExercises.filter(ex => {
