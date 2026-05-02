@@ -128,8 +128,7 @@ const DEFAULT_SPLIT = {
 };
 
 // ─── DATE UTILITIES ───────────────────────────────────────────────────────────
-const NOW            = new Date();
-const TODAY_DATE_STR = formatDateLocal(NOW);                        // e.g. "3/27/2026"
+const NOW            = new Date();                        
 const TODAY_IDX      = NOW.getDay() === 0 ? 6 : NOW.getDay() - 1; // Mon=0…Sun=6
 
 /** Returns true if the given weekday index (Mon=0…Sun=6) is strictly in the future this week */
@@ -617,7 +616,14 @@ function WeightModal({ exercise, onClose, onSave, existing }) {
           </div>
         ))}
         <button onClick={addSet} style={{ width:"100%",background:"#1A1D26",border:"1px dashed #3A3D4A",borderRadius:"8px",color:"#888",padding:"9px",cursor:"pointer",fontSize:"12px",marginTop:"4px",fontFamily:"'DM Sans',sans-serif" }}>+ Add Set</button>
-        <button onClick={()=>{onSave(entries);onClose();}} style={{ width:"100%",background:"linear-gradient(135deg,#FF4D4D,#FF8C42)",border:"none",borderRadius:"10px",color:"#fff",padding:"13px",cursor:"pointer",fontSize:"15px",fontWeight:"700",marginTop:"14px",fontFamily:"'DM Sans',sans-serif" }}>Save Session</button>
+        <button onClick={() => {
+  if (entries.length === 0) {
+    onSave(null);   // 🔥 signal delete
+  } else {
+    onSave(entries);
+  }
+  onClose();
+}} style={{ width:"100%",background:"linear-gradient(135deg,#FF4D4D,#FF8C42)",border:"none",borderRadius:"10px",color:"#fff",padding:"13px",cursor:"pointer",fontSize:"15px",fontWeight:"700",marginTop:"14px",fontFamily:"'DM Sans',sans-serif" }}>Save Session</button>
       </div>
     </div>
   );
@@ -695,14 +701,28 @@ function SplitEditorModal({ day, currentMuscles, muscleGroups, onClose, onSave }
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function GymTracker() {
+  const getTargetDateStr = (selectedDay) => {
+  const today = new Date();
+
+  const dayMap = { Mon:0, Tue:1, Wed:2, Thu:3, Fri:4, Sat:5, Sun:6 };
+  const selectedIndex = dayMap[selectedDay];
+
+  const currentIndex = today.getDay() === 0 ? 6 : today.getDay() - 1;
+  const diff = selectedIndex - currentIndex;
+
+  const target = new Date();
+  target.setDate(today.getDate() + diff);
+
+  return `${target.getFullYear()}-${String(target.getMonth()+1).padStart(2,"0")}-${String(target.getDate()).padStart(2,"0")}`;
+};
   const today = weekdays[TODAY_IDX];
 
   const [loading,                  setLoading]                  = useState(true);
   const [activeTab,                setActiveTab]                = useState("today");
   const [selectedDay,              setSelectedDay]              = useState(today);
-  const [completedExercises,       setCompletedExercises]       = useState({});
+  //const [completedExercises,       setCompletedExercises]       = useState({});
   const [weightLogs,               setWeightLogs]               = useState({});
-  console.log("PARENT weightLogs:", weightLogs);
+  //console.log("PARENT weightLogs:", weightLogs);
   const [customExercises,          setCustomExercises]          = useState({});
   const [weeklySplit,              setWeeklySplit]              = useState(DEFAULT_SPLIT);
   const [modalExercise,            setModalExercise]            = useState(null);
@@ -714,19 +734,18 @@ export default function GymTracker() {
   const fileInputRef = useRef();
 
   // Load from localStorage on mount
-  useEffect(() => {
-    const stored = loadFromLocalStorage();
-    console.log("Loaded from storage:", stored);
-    if (stored) {
-      if (stored?.weightLogs && Object.keys(stored.weightLogs).length > 0) {
-  setWeightLogs(stored.weightLogs);
-}
-      if (stored.customExercises) setCustomExercises(stored.customExercises);
-      if (stored.completedExercises) setCompletedExercises(stored.completedExercises);
-      if (stored.weeklySplit) setWeeklySplit(stored.weeklySplit);
-    }
-    setLoading(false);
-  }, []);
+useEffect(() => {
+  const stored = loadFromLocalStorage();
+  console.log("Loaded from storage:", stored);
+
+  if (stored) {
+    if (stored.weightLogs) setWeightLogs(stored.weightLogs);
+    if (stored.customExercises) setCustomExercises(stored.customExercises);
+    if (stored.weeklySplit) setWeeklySplit(stored.weeklySplit);
+  }
+
+  setLoading(false);
+}, []);
 
   // Auto-save to localStorage whenever state changes
   useEffect(() => {
@@ -734,10 +753,9 @@ export default function GymTracker() {
     saveToLocalStorage({
       weightLogs,
       customExercises,
-      completedExercises,
       weeklySplit
     });
-  }, [loading, weightLogs, customExercises, completedExercises, weeklySplit]);
+  }, [loading, weightLogs, customExercises, weeklySplit]);
 
   // Derived: is the selected day in the future?
   const selectedDayIdx   = weekdays.indexOf(selectedDay);
@@ -751,9 +769,17 @@ export default function GymTracker() {
 
   const todayMuscles    = weeklySplit[selectedDay] || [];
   const todayExercises  = todayMuscles.flatMap(mg => (muscleGroups[mg]?.exercises||[]).map(ex=>({...ex,muscleGroup:mg})));
- const dayData = completedExercises[selectedDay] || {};
+ 
+  const selectedDateStr = getTargetDateStr(selectedDay);
 
-const completedCount = todayExercises.filter(e => dayData[e.id]).length;
+const completedCount = todayExercises.filter(ex => {
+  const logs = weightLogs[ex.id];
+  if (!logs) return false;
+
+  return Object.keys(logs).some(key =>
+    key.includes(selectedDateStr)
+  );
+}).length;
 
 const progress = todayExercises.length > 0
   ? (completedCount / todayExercises.length) * 100
@@ -761,101 +787,54 @@ const progress = todayExercises.length > 0
   const totalCustom     = Object.values(customExercises).flat().length;
   const allExerciseCount = Object.values(muscleGroups).reduce((s,g)=>s+g.exercises.length,0);
   const totalLogged     = Object.keys(weightLogs).length;
-  const removeLogForDay = useCallback((exId, selectedDay) => {
-  setWeightLogs(prev => {
-    const logs = prev[exId];
-    if (!logs) return prev;
+  
 
-    const updatedLogs = { ...logs };
-
-    Object.keys(updatedLogs).forEach(key => {
-      if (key.startsWith(selectedDay)) {
-        delete updatedLogs[key];
-      }
-    });
-
-    return {
-      ...prev,
-      [exId]: updatedLogs
-    };
-  });
-}, []);
-
-  const toggleExercise = useCallback((exId) => {
-  setCompletedExercises(prev => {
-    const dayData = prev[selectedDay] || {};   // ✅ get data for this day
-    const isNowSelected = !dayData[exId];      // ✅ toggle only this day's value
-
-    // If deselecting → remove logs
-    if (!isNowSelected) {
-      removeLogForDay(exId, selectedDay);
-    }
-
-    return {
-      ...prev,
-      [selectedDay]: {
-        ...dayData,
-        [exId]: isNowSelected
-      }
-    };
-  });
-}, [selectedDay, removeLogForDay]);
-  // saveWeights: always uses TODAY's actual date regardless of which day is viewed
+// saveWeights: uses selected day’s actual calendar date
   const saveWeights = useCallback((exId, entries) => {
-  const todayDate = new Date();
+  const dateStr = getTargetDateStr(selectedDay);
+  const dateKey = `${selectedDay} · ${dateStr}`;
 
-  // Get selected day index safely
-  const dayMap = {
-  Mon: 0,
-  Tue: 1,
-  Wed: 2,
-  Thu: 3,
-  Fri: 4,
-  Sat: 5,
-  Sun: 6
-};
+  setWeightLogs(prev => {
+    const logs = prev[exId] || {};
 
+    // 🔥 DELETE case
+    if (!entries || entries.length === 0) {
+      const updated = { ...logs };
+      delete updated[dateKey];
 
+      if (Object.keys(updated).length === 0) {
+        const newState = { ...prev };
+        delete newState[exId];
+        return newState;
+      }
 
-const selectedDayIndex = dayMap[selectedDay];
-
-  // Current day index (Mon=0…Sun=6)
-  const currentDayIndex =
-    todayDate.getDay() === 0 ? 6 : todayDate.getDay() - 1;
-
-  const diff = selectedDayIndex - currentDayIndex;
-
-  const targetDate = new Date();
-  targetDate.setDate(todayDate.getDate() + diff);
-
-  const dateStr =
-    targetDate.getFullYear() + "-" +
-    String(targetDate.getMonth() + 1).padStart(2, "0") + "-" +
-    String(targetDate.getDate()).padStart(2, "0");
-
-  const dayNames = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-
-  const dateKey = `${dayNames[selectedDayIndex]} · ${dateStr}`;
-
-  console.log("Saving dateKey:", dateKey);
-  console.log("Selected day index:", selectedDay); // DEBUG
-
-  setWeightLogs(p => ({
-    ...p,
-    [exId]: {
-      ...(p[exId] || {}),
-      [dateKey]: entries
+      return {
+        ...prev,
+        [exId]: updated
+      };
     }
-  }));
+
+    // ✅ SAVE case
+    return {
+      ...prev,
+      [exId]: {
+        ...logs,
+        [dateKey]: entries
+      }
+    };
+  });
 }, [selectedDay]);
+
+
+
 
   const getLogForSelectedDay = useCallback((exId, selectedDay) => {
   const logs = weightLogs[exId];
   if (!logs) return null;
 
   const entry = Object.entries(logs).find(([key]) =>
-    key.startsWith(selectedDay)
-  );
+  key.endsWith(getTargetDateStr(selectedDay))
+);
 
   return entry ? entry[1] : null;
 }, [weightLogs]);
@@ -867,7 +846,6 @@ const selectedDayIndex = dayMap[selectedDay];
 const handleBackup = async () => {
   try {
     const data = {
-      completedExercises,
       weightLogs,
       customExercises,
       weeklySplit,
@@ -925,7 +903,7 @@ const handleBackup = async () => {
       try {
         const d=JSON.parse(ev.target.result);
         if (d.weightLogs)         setWeightLogs(d.weightLogs);
-        if (d.completedExercises) setCompletedExercises(d.completedExercises);
+        //if (d.completedExercises) setCompletedExercises(d.completedExercises);
         if (d.customExercises)    setCustomExercises(d.customExercises);
         if (d.weeklySplit)        setWeeklySplit(d.weeklySplit);
         setBackupMsg("✓ Data restored! Welcome back.");
@@ -941,7 +919,7 @@ const handleBackup = async () => {
     localStorage.removeItem(STORAGE_KEY);
 
     setWeightLogs({});
-    setCompletedExercises({});
+    //setCompletedExercises({});
     setCustomExercises({});
     setWeeklySplit(DEFAULT_SPLIT);
 
@@ -954,7 +932,14 @@ const handleBackup = async () => {
 };
   // ── Exercise Card ──
   const ExerciseCard = useCallback(({ ex, group, showDelete }) => {
-    const done = completedExercises[selectedDay]?.[ex.id];
+    const done = (() => {
+  const logs = weightLogs[ex.id];
+  if (!logs) return false;
+
+  return Object.keys(logs).some(key =>
+    key.endsWith(getTargetDateStr(selectedDay))
+  );
+})();
     const lastLog   = getLogForSelectedDay(ex.id, selectedDay);
     const muscleKey = ex.muscleGroup || Object.keys(muscleGroups).find(k=>muscleGroups[k].exercises.some(e=>e.id===ex.id));
     // Disable logging if viewing a future day
@@ -963,7 +948,7 @@ const handleBackup = async () => {
     return (
       <div style={{ background:done?`${group.color}12`:"#0F1117",border:`1px solid ${done?group.color+"50":"#1E2130"}`,borderRadius:"14px",padding:"15px",marginBottom:"10px",transition:"all 0.25s" }}>
         <div style={{ display:"flex",alignItems:"flex-start",gap:"11px" }}>
-          <button onClick={()=>canLog&&toggleExercise(ex.id)} disabled={!canLog} style={{ width:"26px",height:"26px",borderRadius:"8px",border:`2px solid ${done?group.color:"#2A2D3A"}`,background:done?group.color:"transparent",cursor:canLog?"pointer":"not-allowed",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:"13px",marginTop:"1px",transition:"all 0.2s" }}>{done?"✓":""}</button>
+          <button onClick={()=>canLog&&setModalExercise(ex)} disabled={!canLog} style={{ width:"26px",height:"26px",borderRadius:"8px",border:`2px solid ${done?group.color:"#2A2D3A"}`,background:done?group.color:"transparent",cursor:canLog?"pointer":"not-allowed",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:"13px",marginTop:"1px",transition:"all 0.2s" }}>{done?"✓":""}</button>
           <div style={{ flex:1,minWidth:0 }}>
             <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"8px",flexWrap:"wrap" }}>
               <div style={{ display:"flex",alignItems:"center",gap:"6px",flexWrap:"wrap" }}>
@@ -987,7 +972,7 @@ const handleBackup = async () => {
         </div>
       </div>
     );
-  }, [completedExercises, muscleGroups, toggleExercise, deleteCustomExercise, selectedIsFuture, today,getLogForSelectedDay,selectedDay]);
+  }, [weightLogs,muscleGroups,deleteCustomExercise,selectedIsFuture,today,getLogForSelectedDay,selectedDay]);
 
   if (loading) {
     return (
