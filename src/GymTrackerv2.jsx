@@ -128,8 +128,7 @@ const DEFAULT_SPLIT = {
 };
 
 // ─── DATE UTILITIES ───────────────────────────────────────────────────────────
-const NOW            = new Date();
-const TODAY_DATE_STR = formatDateLocal(NOW);                        // e.g. "3/27/2026"
+const NOW            = new Date();                        
 const TODAY_IDX      = NOW.getDay() === 0 ? 6 : NOW.getDay() - 1; // Mon=0…Sun=6
 
 /** Returns true if the given weekday index (Mon=0…Sun=6) is strictly in the future this week */
@@ -1003,7 +1002,7 @@ const handleBackup = async () => {
         </div>
       </div>
     );
-  }, [completedExercises, muscleGroups, toggleExercise, deleteCustomExercise, selectedIsFuture, today,getLogForSelectedDay,selectedDay]);
+  }, [weightLogs,muscleGroups,toggleExercise,deleteCustomExercise,selectedIsFuture,today,getLogForSelectedDay,selectedDay]);
 
   if (loading) {
     return (
