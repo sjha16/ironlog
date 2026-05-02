@@ -783,25 +783,7 @@ const progress = todayExercises.length > 0
   const totalCustom     = Object.values(customExercises).flat().length;
   const allExerciseCount = Object.values(muscleGroups).reduce((s,g)=>s+g.exercises.length,0);
   const totalLogged     = Object.keys(weightLogs).length;
-  const removeLogForDay = useCallback((exId, selectedDay) => {
-  setWeightLogs(prev => {
-    const logs = prev[exId];
-    if (!logs) return prev;
-
-    const updatedLogs = { ...logs };
-
-    Object.keys(updatedLogs).forEach(key => {
-      if (key.startsWith(selectedDay)) {
-        delete updatedLogs[key];
-      }
-    });
-
-    return {
-      ...prev,
-      [exId]: updatedLogs
-    };
-  });
-}, []);
+  
 
   // saveWeights: always uses TODAY's actual date regardless of which day is viewed
   const saveWeights = useCallback((exId, entries) => {
@@ -857,7 +839,7 @@ const selectedDayIndex = dayMap[selectedDay];
   if (!logs) return null;
 
   const entry = Object.entries(logs).find(([key]) =>
-  key.includes(getTargetDateStr(selectedDay))
+  key.endsWith(getTargetDateStr(selectedDay))
 );
 
   return entry ? entry[1] : null;
