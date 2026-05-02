@@ -616,7 +616,14 @@ function WeightModal({ exercise, onClose, onSave, existing }) {
           </div>
         ))}
         <button onClick={addSet} style={{ width:"100%",background:"#1A1D26",border:"1px dashed #3A3D4A",borderRadius:"8px",color:"#888",padding:"9px",cursor:"pointer",fontSize:"12px",marginTop:"4px",fontFamily:"'DM Sans',sans-serif" }}>+ Add Set</button>
-        <button onClick={()=>{onSave(entries);onClose();}} style={{ width:"100%",background:"linear-gradient(135deg,#FF4D4D,#FF8C42)",border:"none",borderRadius:"10px",color:"#fff",padding:"13px",cursor:"pointer",fontSize:"15px",fontWeight:"700",marginTop:"14px",fontFamily:"'DM Sans',sans-serif" }}>Save Session</button>
+        <button onClick={() => {
+  if (entries.length === 0) {
+    onSave(null);   // 🔥 signal delete
+  } else {
+    onSave(entries);
+  }
+  onClose();
+}} style={{ width:"100%",background:"linear-gradient(135deg,#FF4D4D,#FF8C42)",border:"none",borderRadius:"10px",color:"#fff",padding:"13px",cursor:"pointer",fontSize:"15px",fontWeight:"700",marginTop:"14px",fontFamily:"'DM Sans',sans-serif" }}>Save Session</button>
       </div>
     </div>
   );
@@ -785,20 +792,41 @@ const progress = todayExercises.length > 0
   const totalLogged     = Object.keys(weightLogs).length;
   
 
-  // saveWeights: always uses TODAY's actual date regardless of which day is viewed
+// saveWeights: uses selected day’s actual calendar date
   const saveWeights = useCallback((exId, entries) => {
-  const todayDate = new Date();
+  const dateStr = getTargetDateStr(selectedDay);
+  const dateKey = `${selectedDay} · ${dateStr}`;
 
-  // Get selected day index safely
-  const dayMap = {
-  Mon: 0,
-  Tue: 1,
-  Wed: 2,
-  Thu: 3,
-  Fri: 4,
-  Sat: 5,
-  Sun: 6
-};
+  setWeightLogs(prev => {
+    const logs = prev[exId] || {};
+
+    // 🔥 DELETE case
+    if (!entries || entries.length === 0) {
+      const updated = { ...logs };
+      delete updated[dateKey];
+
+      if (Object.keys(updated).length === 0) {
+        const newState = { ...prev };
+        delete newState[exId];
+        return newState;
+      }
+
+      return {
+        ...prev,
+        [exId]: updated
+      };
+    }
+
+    // ✅ SAVE case
+    return {
+      ...prev,
+      [exId]: {
+        ...logs,
+        [dateKey]: entries
+      }
+    };
+  });
+}, [selectedDay]);
 
 
 
@@ -943,7 +971,7 @@ const handleBackup = async () => {
   if (!logs) return false;
 
   return Object.keys(logs).some(key =>
-    key.includes(getTodayDateStr())
+    key.endsWith(getTargetDateStr(selectedDay))
   );
 })();
     const lastLog   = getLogForSelectedDay(ex.id, selectedDay);
