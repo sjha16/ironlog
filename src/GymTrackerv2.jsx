@@ -751,9 +751,18 @@ export default function GymTracker() {
 
   const todayMuscles    = weeklySplit[selectedDay] || [];
   const todayExercises  = todayMuscles.flatMap(mg => (muscleGroups[mg]?.exercises||[]).map(ex=>({...ex,muscleGroup:mg})));
- const dayData = completedExercises[selectedDay] || {};
+ const getTodayDateStr = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
+  const completedCount = todayExercises.filter(ex => {
+  const logs = weightLogs[ex.id];
+  if (!logs) return false;
 
-const completedCount = todayExercises.filter(e => dayData[e.id]).length;
+  return Object.keys(logs).some(key =>
+    key.includes(getTodayDateStr())
+  );
+}).length;
 
 const progress = todayExercises.length > 0
   ? (completedCount / todayExercises.length) * 100
@@ -954,7 +963,14 @@ const handleBackup = async () => {
 };
   // ── Exercise Card ──
   const ExerciseCard = useCallback(({ ex, group, showDelete }) => {
-    const done = completedExercises[selectedDay]?.[ex.id];
+    const done = (() => {
+  const logs = weightLogs[ex.id];
+  if (!logs) return false;
+
+  return Object.keys(logs).some(key =>
+    key.includes(getTodayDateStr())
+  );
+})();
     const lastLog   = getLogForSelectedDay(ex.id, selectedDay);
     const muscleKey = ex.muscleGroup || Object.keys(muscleGroups).find(k=>muscleGroups[k].exercises.some(e=>e.id===ex.id));
     // Disable logging if viewing a future day
