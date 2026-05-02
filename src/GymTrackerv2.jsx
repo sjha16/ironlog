@@ -830,37 +830,6 @@ const progress = todayExercises.length > 0
 
 
 
-const selectedDayIndex = dayMap[selectedDay];
-
-  // Current day index (Mon=0…Sun=6)
-  const currentDayIndex =
-    todayDate.getDay() === 0 ? 6 : todayDate.getDay() - 1;
-
-  const diff = selectedDayIndex - currentDayIndex;
-
-  const targetDate = new Date();
-  targetDate.setDate(todayDate.getDate() + diff);
-
-  const dateStr =
-    targetDate.getFullYear() + "-" +
-    String(targetDate.getMonth() + 1).padStart(2, "0") + "-" +
-    String(targetDate.getDate()).padStart(2, "0");
-
-  const dayNames = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-
-  const dateKey = `${dayNames[selectedDayIndex]} · ${dateStr}`;
-
-  //console.log("Saving dateKey:", dateKey);
-  //console.log("Selected day index:", selectedDay); // DEBUG
-
-  setWeightLogs(p => ({
-    ...p,
-    [exId]: {
-      ...(p[exId] || {}),
-      [dateKey]: entries
-    }
-  }));
-}, [selectedDay]);
 
   const getLogForSelectedDay = useCallback((exId, selectedDay) => {
   const logs = weightLogs[exId];
