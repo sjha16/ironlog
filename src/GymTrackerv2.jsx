@@ -727,20 +727,18 @@ export default function GymTracker() {
   const fileInputRef = useRef();
 
   // Load from localStorage on mount
-  useEffect(() => {
-    const stored = loadFromLocalStorage();
-    console.log("Loaded from storage:", stored);
-    if (stored) {
-      if (stored?.weightLogs) {
-  setWeightLogs(stored.weightLogs);
-}
-}
-      if (stored.customExercises) setCustomExercises(stored.customExercises);
-      //if (stored.completedExercises) setCompletedExercises(stored.completedExercises);
-      if (stored.weeklySplit) setWeeklySplit(stored.weeklySplit);
-    }
-    setLoading(false);
-  }, []);
+useEffect(() => {
+  const stored = loadFromLocalStorage();
+  console.log("Loaded from storage:", stored);
+
+  if (stored) {
+    if (stored.weightLogs) setWeightLogs(stored.weightLogs);
+    if (stored.customExercises) setCustomExercises(stored.customExercises);
+    if (stored.weeklySplit) setWeeklySplit(stored.weeklySplit);
+  }
+
+  setLoading(false);
+}, []);
 
   // Auto-save to localStorage whenever state changes
   useEffect(() => {
