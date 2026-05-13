@@ -1978,9 +1978,9 @@ export default function GymTracker() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("today");
   const [selectedDay, setSelectedDay] = useState(today);
-  //const [completedExercises,       setCompletedExercises]       = useState({});
+
   const [weightLogs, setWeightLogs] = useState({});
-  //console.log("PARENT weightLogs:", weightLogs);
+
   const [customExercises, setCustomExercises] = useState({});
   const [weeklySplit, setWeeklySplit] = useState(DEFAULT_SPLIT);
   const [modalExercise, setModalExercise] = useState(null);
@@ -1990,6 +1990,7 @@ export default function GymTracker() {
   const [splitEditorDay, setSplitEditorDay] = useState(null);
   const [expandedGroup, setExpandedGroup] = useState(null);
   const [backupMsg, setBackupMsg] = useState("");
+  const [workoutSession, setWorkoutSession] = useState(null);
   const fileInputRef = useRef();
 
   // Load from localStorage on mount
@@ -2001,6 +2002,7 @@ export default function GymTracker() {
       if (stored.weightLogs) setWeightLogs(stored.weightLogs);
       if (stored.customExercises) setCustomExercises(stored.customExercises);
       if (stored.weeklySplit) setWeeklySplit(stored.weeklySplit);
+      if (stored.workoutSession) setWorkoutSession(stored.workoutSession);
     }
 
     setLoading(false);
@@ -2013,9 +2015,41 @@ export default function GymTracker() {
       weightLogs,
       customExercises,
       weeklySplit,
+      workoutSession,
     });
-  }, [loading, weightLogs, customExercises, weeklySplit]);
+  }, [loading, weightLogs, customExercises, weeklySplit, workoutSession]);
 
+  const startWorkout = () => {
+    setWorkoutSession({
+      startTime: new Date().toISOString(),
+      endTime: null,
+      durationMin: null,
+    });
+  };
+
+  const endWorkout = () => {
+    setWorkoutSession((prev) => {
+      if (!prev?.startTime) return prev;
+
+      const endTime = new Date().toISOString();
+      const durationMin = Math.round(
+        (new Date(endTime) - new Date(prev.startTime)) / 60000,
+      );
+
+      return {
+        ...prev,
+        endTime,
+        durationMin,
+      };
+    });
+  };
+  const formatMinutes = (min) => {
+    if (min == null) return "--";
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    if (h === 0) return `${m} min`;
+    return `${h} hr ${m} min`;
+  };
   // Derived: is the selected day in the future?
   const selectedDayIdx = weekdays.indexOf(selectedDay);
   const selectedIsFuture = isFutureDay(selectedDayIdx);
@@ -2743,6 +2777,156 @@ export default function GymTracker() {
                 ✏ Edit Split
               </button>
             </div>
+
+            {/* WORKOUT SESSION TIMER */}
+            {!selectedIsFuture && todayExercises.length > 0 && (
+              <>
+                {!workoutSession?.startTime ? (
+                  <button
+                    onClick={startWorkout}
+                    style={{
+                      width: "100%",
+                      padding: "14px",
+                      borderRadius: "12px",
+                      border: "none",
+                      background: "linear-gradient(135deg,#2ECC71,#27AE60)",
+                      color: "#fff",
+                      fontWeight: "700",
+                      fontSize: "15px",
+                      cursor: "pointer",
+                      marginBottom: "14px",
+                    }}
+                  >
+                    ▶ Start Workout
+                  </button>
+                ) : workoutSession?.endTime ? (
+                  <div
+                    style={{
+                      background: "#10141C",
+                      border: "1px solid #2A2D3A",
+                      borderRadius: "14px",
+                      padding: "14px",
+                      marginBottom: "14px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        color: "#2ECC71",
+                        fontWeight: "700",
+                        marginBottom: "6px",
+                      }}
+                    >
+                      Workout Completed
+                    </div>
+
+                    <div
+                      style={{
+                        fontSize: "13px",
+                        color: "#888",
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      <div>
+                        Started:{" "}
+                        {new Date(workoutSession.startTime).toLocaleTimeString(
+                          [],
+                          {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          },
+                        )}
+                      </div>
+                      <div>
+                        Ended:{" "}
+                        {new Date(workoutSession.endTime).toLocaleTimeString(
+                          [],
+                          {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          },
+                        )}
+                      </div>
+                      <div>
+                        Duration:{" "}
+                        <strong style={{ color: "#F0F0F0" }}>
+                          {formatMinutes(workoutSession.durationMin)}
+                        </strong>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={startWorkout}
+                      style={{
+                        width: "100%",
+                        marginTop: "12px",
+                        padding: "12px",
+                        borderRadius: "10px",
+                        border: "none",
+                        background: "linear-gradient(135deg,#2ECC71,#27AE60)",
+                        color: "#fff",
+                        fontWeight: "700",
+                        cursor: "pointer",
+                      }}
+                    >
+                      ▶ Start New Workout
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      background: "#11161F",
+                      border: "1px solid #1F2937",
+                      borderRadius: "14px",
+                      padding: "14px",
+                      marginBottom: "14px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        color: "#2ECC71",
+                        fontWeight: "700",
+                        marginBottom: "6px",
+                      }}
+                    >
+                      Workout in Progress
+                    </div>
+
+                    <div
+                      style={{
+                        fontSize: "13px",
+                        color: "#888",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      Started:{" "}
+                      {new Date(workoutSession.startTime).toLocaleTimeString(
+                        [],
+                        {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        },
+                      )}
+                    </div>
+
+                    <button
+                      onClick={endWorkout}
+                      style={{
+                        width: "100%",
+                        padding: "12px",
+                        borderRadius: "10px",
+                        border: "none",
+                        background: "linear-gradient(135deg,#FF4D4D,#E74C3C)",
+                        color: "#fff",
+                        fontWeight: "700",
+                        cursor: "pointer",
+                      }}
+                    >
+                      ⏹ End Workout
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
 
             {todayExercises.length > 0 && !selectedIsFuture && (
               <div
