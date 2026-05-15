@@ -1990,7 +1990,7 @@ export default function GymTracker() {
   const [splitEditorDay, setSplitEditorDay] = useState(null);
   const [expandedGroup, setExpandedGroup] = useState(null);
   const [backupMsg, setBackupMsg] = useState("");
-  const [workoutSession, setWorkoutSession] = useState(null);
+  const [workoutSessions, setWorkoutSessions] = useState({});
   const fileInputRef = useRef();
 
   // Load from localStorage on mount
@@ -2002,7 +2002,9 @@ export default function GymTracker() {
       if (stored.weightLogs) setWeightLogs(stored.weightLogs);
       if (stored.customExercises) setCustomExercises(stored.customExercises);
       if (stored.weeklySplit) setWeeklySplit(stored.weeklySplit);
-      if (stored.workoutSession) setWorkoutSession(stored.workoutSession);
+      if (stored.workoutSessions) {
+        setWorkoutSessions(stored.workoutSessions);
+      }
     }
 
     setLoading(false);
@@ -2015,31 +2017,45 @@ export default function GymTracker() {
       weightLogs,
       customExercises,
       weeklySplit,
-      workoutSession,
+      workoutSessions,
     });
-  }, [loading, weightLogs, customExercises, weeklySplit, workoutSession]);
+  }, [loading, weightLogs, customExercises, weeklySplit, workoutSessions]);
 
   const startWorkout = () => {
-    setWorkoutSession({
-      startTime: new Date().toISOString(),
-      endTime: null,
-      durationMin: null,
-    });
+    const dateStr = getTargetDateStr(today);
+
+    setWorkoutSessions((prev) => ({
+      ...prev,
+      [dateStr]: {
+        startTime: new Date().toISOString(),
+        endTime: null,
+        durationMin: null,
+      },
+    }));
   };
 
   const endWorkout = () => {
-    setWorkoutSession((prev) => {
-      if (!prev?.startTime) return prev;
+    const dateStr = getTargetDateStr(today);
+
+    setWorkoutSessions((prev) => {
+      const session = prev[dateStr];
+
+      if (!session?.startTime) return prev;
 
       const endTime = new Date().toISOString();
-      const durationMin = Math.round(
-        (new Date(endTime) - new Date(prev.startTime)) / 60000,
+
+      const durationMin = Math.max(
+        1,
+        Math.round((new Date(endTime) - new Date(session.startTime)) / 60000),
       );
 
       return {
         ...prev,
-        endTime,
-        durationMin,
+        [dateStr]: {
+          ...session,
+          endTime,
+          durationMin,
+        },
       };
     });
   };
@@ -2077,6 +2093,9 @@ export default function GymTracker() {
   );
 
   const selectedDateStr = getTargetDateStr(selectedDay);
+  const selectedSession = workoutSessions[selectedDateStr] || null;
+
+  const isTodaySelected = selectedDay === today;
 
   const completedCount = todayExercises.filter((ex) => {
     const logs = weightLogs[ex.id];
@@ -2186,6 +2205,7 @@ export default function GymTracker() {
       const data = {
         weightLogs,
         customExercises,
+        workoutSessions,
         weeklySplit,
         exportedAt: new Date().toISOString(),
       };
@@ -2243,6 +2263,7 @@ export default function GymTracker() {
         if (d.weightLogs) setWeightLogs(d.weightLogs);
         //if (d.completedExercises) setCompletedExercises(d.completedExercises);
         if (d.customExercises) setCustomExercises(d.customExercises);
+        if (d.workoutSessions) setWorkoutSessions(d.workoutSessions);
         if (d.weeklySplit) setWeeklySplit(d.weeklySplit);
         setBackupMsg("✓ Data restored! Welcome back.");
       } catch {
@@ -2266,6 +2287,7 @@ export default function GymTracker() {
       //setCompletedExercises({});
       setCustomExercises({});
       setWeeklySplit(DEFAULT_SPLIT);
+      setWorkoutSessions({});
 
       setBackupMsg("✓ All data cleared.");
       setTimeout(() => setBackupMsg(""), 3500);
@@ -2778,10 +2800,14 @@ export default function GymTracker() {
               </button>
             </div>
 
-            {/* WORKOUT SESSION TIMER */}
-            {!selectedIsFuture && todayExercises.length > 0 && (
+            {/* WORKOUT SESSION SECTION */}
+
+            {/* ONLY SHOW START/END BUTTONS ON TODAY */}
+            {isTodaySelected && (
               <>
-                {!workoutSession?.startTime ? (
+                {!selectedSession?.startTime || selectedSession?.endTime ? (
+                  /* START BUTTON */
+
                   <button
                     onClick={startWorkout}
                     style={{
@@ -2799,79 +2825,9 @@ export default function GymTracker() {
                   >
                     ▶ Start Workout
                   </button>
-                ) : workoutSession?.endTime ? (
-                  <div
-                    style={{
-                      background: "#10141C",
-                      border: "1px solid #2A2D3A",
-                      borderRadius: "14px",
-                      padding: "14px",
-                      marginBottom: "14px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        color: "#2ECC71",
-                        fontWeight: "700",
-                        marginBottom: "6px",
-                      }}
-                    >
-                      Workout Completed
-                    </div>
-
-                    <div
-                      style={{
-                        fontSize: "13px",
-                        color: "#888",
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      <div>
-                        Started:{" "}
-                        {new Date(workoutSession.startTime).toLocaleTimeString(
-                          [],
-                          {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          },
-                        )}
-                      </div>
-                      <div>
-                        Ended:{" "}
-                        {new Date(workoutSession.endTime).toLocaleTimeString(
-                          [],
-                          {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          },
-                        )}
-                      </div>
-                      <div>
-                        Duration:{" "}
-                        <strong style={{ color: "#F0F0F0" }}>
-                          {formatMinutes(workoutSession.durationMin)}
-                        </strong>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={startWorkout}
-                      style={{
-                        width: "100%",
-                        marginTop: "12px",
-                        padding: "12px",
-                        borderRadius: "10px",
-                        border: "none",
-                        background: "linear-gradient(135deg,#2ECC71,#27AE60)",
-                        color: "#fff",
-                        fontWeight: "700",
-                        cursor: "pointer",
-                      }}
-                    >
-                      ▶ Start New Workout
-                    </button>
-                  </div>
                 ) : (
+                  /* WORKOUT RUNNING CARD */
+
                   <div
                     style={{
                       background: "#11161F",
@@ -2899,7 +2855,7 @@ export default function GymTracker() {
                       }}
                     >
                       Started:{" "}
-                      {new Date(workoutSession.startTime).toLocaleTimeString(
+                      {new Date(selectedSession.startTime).toLocaleTimeString(
                         [],
                         {
                           hour: "2-digit",
@@ -2926,6 +2882,63 @@ export default function GymTracker() {
                   </div>
                 )}
               </>
+            )}
+
+            {/* SHOW COMPLETED WORKOUT SUMMARY FOR ANY DAY */}
+            {selectedSession?.startTime && selectedSession?.endTime && (
+              <div
+                style={{
+                  background: "#10141C",
+                  border: "1px solid #2A2D3A",
+                  borderRadius: "14px",
+                  padding: "14px",
+                  marginBottom: "14px",
+                }}
+              >
+                <div
+                  style={{
+                    color: "#2ECC71",
+                    fontWeight: "700",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Workout Completed
+                </div>
+
+                <div
+                  style={{
+                    fontSize: "13px",
+                    color: "#888",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  <div>
+                    Started:{" "}
+                    {new Date(selectedSession.startTime).toLocaleTimeString(
+                      [],
+                      {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      },
+                    )}
+                  </div>
+
+                  <div>
+                    Ended:{" "}
+                    {new Date(selectedSession.endTime).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </div>
+
+                  <div>
+                    Duration:{" "}
+                    <strong style={{ color: "#F0F0F0" }}>
+                      {formatMinutes(selectedSession.durationMin)}
+                    </strong>
+                  </div>
+                </div>
+              </div>
             )}
 
             {todayExercises.length > 0 && !selectedIsFuture && (
