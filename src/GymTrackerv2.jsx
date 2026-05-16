@@ -50,6 +50,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "4x6-8",
         tip: "Arnold's #1 chest builder. Retract scapula, drive feet into floor.",
         instructor: "Arnold Schwarzenegger",
+        logType: "weight_reps",
       },
       {
         id: "c2",
@@ -57,6 +58,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x10-12",
         tip: "30-45° incline hits upper chest. Control the eccentric.",
         instructor: "Jeff Nippard",
+        logType: "weight_reps",
       },
       {
         id: "c3",
@@ -64,6 +66,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x12-15",
         tip: "Keep slight elbow bend, squeeze at center. Mind-muscle connection.",
         instructor: "Chris Bumstead",
+        logType: "weight_reps",
       },
       {
         id: "c4",
@@ -71,6 +74,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x15-20",
         tip: "Feet elevated higher = more upper chest activation.",
         instructor: "Athlean-X",
+        logType: "bodyweight",
       },
       {
         id: "c5",
@@ -78,6 +82,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x12",
         tip: "Expands ribcage, stretches pec minor. Keep slight elbow bend.",
         instructor: "Dorian Yates",
+        logType: "weight_reps",
       },
     ],
   },
@@ -92,6 +97,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "4x4-6",
         tip: "King of all lifts. Bar over mid-foot, hip hinge, neutral spine.",
         instructor: "Ed Coan",
+        logType: "weight_reps",
       },
       {
         id: "b2",
@@ -99,6 +105,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "4x6-10",
         tip: "Full ROM. Think elbows to hips, not pulling bar to chest.",
         instructor: "Athlean-X",
+        logType: "bodyweight_weight_reps",
       },
       {
         id: "b3",
@@ -106,6 +113,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "4x8-10",
         tip: "Hinge 45°, row to lower chest. Controlled negative.",
         instructor: "Dorian Yates",
+        logType: "weight_reps",
       },
       {
         id: "b4",
@@ -113,6 +121,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x12",
         tip: "Chest up, drive elbows back, squeeze rhomboids at peak.",
         instructor: "Lee Haney",
+        logType: "weight_reps",
       },
       {
         id: "b5",
@@ -120,6 +129,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x10-12",
         tip: "Wide grip, lean back slightly, pull to upper chest.",
         instructor: "Jeff Nippard",
+        logType: "weight_reps",
       },
       {
         id: "b6",
@@ -127,6 +137,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x15-20",
         tip: "External rotation is key. Prevents shoulder injury long-term.",
         instructor: "Athlean-X",
+        logType: "weight_reps",
       },
     ],
   },
@@ -141,6 +152,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "4x6-8",
         tip: "Full lockout at top, slight layback. Core tight throughout.",
         instructor: "Mark Rippetoe",
+        logType: "weight_reps",
       },
       {
         id: "s2",
@@ -148,6 +160,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "4x12-15",
         tip: "Lead with elbows, slight forward lean. Don't swing!",
         instructor: "John Meadows",
+        logType: "weight_reps",
       },
       {
         id: "s3",
@@ -155,6 +168,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x10-12",
         tip: "Rotation engages all three delt heads. Slow and controlled.",
         instructor: "Arnold Schwarzenegger",
+        logType: "weight_reps",
       },
       {
         id: "s4",
@@ -162,6 +176,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x15",
         tip: "Bent over, neutral spine. Squeeze rear delts, not traps.",
         instructor: "Chris Bumstead",
+        logType: "weight_reps",
       },
       {
         id: "s5",
@@ -169,6 +184,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x12",
         tip: "Elbows flared wide, pull to chin height. Protects rotator cuff.",
         instructor: "Jeff Nippard",
+        logType: "weight_reps",
       },
     ],
   },
@@ -183,6 +199,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x8-10",
         tip: "Don't swing. Supinate fully at the top. Full stretch at bottom.",
         instructor: "Scott Herman",
+        logType: "weight_reps",
       },
       {
         id: "bi2",
@@ -190,6 +207,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x10-12",
         tip: "Stretch under load. Best long head activator.",
         instructor: "John Meadows",
+        logType: "weight_reps",
       },
       {
         id: "bi3",
@@ -197,6 +215,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x10",
         tip: "Builds brachialis and brachioradialis for arm thickness.",
         instructor: "Athlean-X",
+        logType: "weight_reps",
       },
       {
         id: "bi4",
@@ -204,6 +223,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x12",
         tip: "Eliminates cheating. Peak contraction is everything here.",
         instructor: "Larry Scott",
+        logType: "weight_reps",
       },
     ],
   },
@@ -218,6 +238,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "4x8-10",
         tip: "Elbows tucked, shoulder-width grip. Triceps do 60% of bench work.",
         instructor: "Mark Bell",
+        logType: "weight_reps",
       },
       {
         id: "t2",
@@ -225,6 +246,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x12",
         tip: "Long head stretch. Keep elbows pointing forward.",
         instructor: "Jeff Nippard",
+        logType: "weight_reps",
       },
       {
         id: "t3",
@@ -232,6 +254,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x12-15",
         tip: "Flare wrists at bottom. Full extension every rep.",
         instructor: "Chris Bumstead",
+        logType: "weight_reps",
       },
       {
         id: "t4",
@@ -239,6 +262,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x10",
         tip: "Lower to forehead, keep elbows stationary. Massive long head.",
         instructor: "Dorian Yates",
+        logType: "weight_reps",
       },
     ],
   },
@@ -253,6 +277,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "4x6-8",
         tip: "Depth below parallel. Knees track toes. Chest up.",
         instructor: "Mark Rippetoe",
+        logType: "weight_reps",
       },
       {
         id: "l2",
@@ -260,6 +285,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x10-12",
         tip: "Hip hinge master. Feel hamstring stretch, not lower back.",
         instructor: "Jeff Nippard",
+        logType: "weight_reps",
       },
       {
         id: "l3",
@@ -267,6 +293,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "4x12",
         tip: "High foot placement = more glute/ham. Low = quad dominant.",
         instructor: "Tom Platz",
+        logType: "weight_reps",
       },
       {
         id: "l4",
@@ -274,6 +301,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x12-15",
         tip: "Full ROM. Point toes down to maximize hamstring stretch.",
         instructor: "John Meadows",
+        logType: "weight_reps",
       },
       {
         id: "l5",
@@ -281,6 +309,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x10 each",
         tip: "Best unilateral leg exercise. Rear foot elevated, torso upright.",
         instructor: "Chris Bumstead",
+        logType: "weight_reps",
       },
       {
         id: "l6",
@@ -288,6 +317,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "4x15-20",
         tip: "Full stretch at bottom. 2-sec pause. Calves love volume.",
         instructor: "Arnold Schwarzenegger",
+        logType: "weight_reps",
       },
     ],
   },
@@ -302,6 +332,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x15-20",
         tip: "Crunch with abs, not hips. Elbows to knees.",
         instructor: "Athlean-X",
+        logType: "weight_reps",
       },
       {
         id: "co2",
@@ -309,6 +340,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x12-15",
         tip: "No swinging. Posterior pelvic tilt at the top.",
         instructor: "Jeff Nippard",
+        logType: "reps_only",
       },
       {
         id: "co3",
@@ -316,6 +348,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x10",
         tip: "Brace hard. Don't let lower back sag. Advanced move.",
         instructor: "Athlean-X",
+        logType: "reps_only",
       },
       {
         id: "co4",
@@ -323,6 +356,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x45-60s",
         tip: "Neutral spine, squeeze glutes, push ground away.",
         instructor: "Stuart McGill",
+        logType: "timer",
       },
     ],
   },
@@ -337,6 +371,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x15-20",
         tip: "Full ROM on the wrist. Slow eccentric builds grip strength.",
         instructor: "John Meadows",
+        logType: "weight_reps",
       },
       {
         id: "f2",
@@ -344,6 +379,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x12",
         tip: "Overhand grip. Targets brachioradialis and extensors.",
         instructor: "Athlean-X",
+        logType: "weight_reps",
       },
       {
         id: "f3",
@@ -351,6 +387,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x30m",
         tip: "Walk with heavy dumbbells. Best functional forearm builder.",
         instructor: "Dan John",
+        logType: "weight_time",
       },
     ],
   },
@@ -365,6 +402,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "4x10-12",
         tip: "Chin tucked, drive through heels. Full hip extension at top.",
         instructor: "Bret Contreras",
+        logType: "weight_reps",
       },
       {
         id: "g2",
@@ -372,6 +410,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x15 each",
         tip: "Slight forward lean. Squeeze glute at top, not just kick.",
         instructor: "Bret Contreras",
+        logType: "weight_reps",
       },
       {
         id: "g3",
@@ -379,6 +418,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x8",
         tip: "Wide stance activates glutes more than conventional.",
         instructor: "Jeff Nippard",
+        logType: "weight_reps",
       },
       {
         id: "g4",
@@ -386,6 +426,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "3x15-20",
         tip: "Works glute med. Essential for hip stability and shape.",
         instructor: "Chris Bumstead",
+        logType: "weight_reps",
       },
     ],
   },
@@ -1333,7 +1374,24 @@ const WorkoutCalendar = ({ weightLogs, muscleGroups }) => {
               const group = groupEntry
                 ? groupEntry[1]
                 : { color: "#888", icon: "●", label: "" };
-              const validSets = sets.filter((s) => s.weight || s.reps);
+              const validSets = sets.filter(
+                (s) => s.weight || s.reps || s.time,
+              );
+              const formatProgressSet = (set, logType) => {
+                if (logType === "timer") {
+                  return `${set.time || "–"} sec`;
+                }
+
+                if (logType === "reps_only") {
+                  return `${set.reps || "–"} reps`;
+                }
+
+                if (logType === "weight_time") {
+                  return `${set.weight || "–"}kg × ${set.time || "–"} sec`;
+                }
+
+                return `${set.weight || "–"}kg × ${set.reps || "–"}`;
+              };
               return (
                 <div
                   key={ex.id}
@@ -1413,7 +1471,8 @@ const WorkoutCalendar = ({ weightLogs, muscleGroups }) => {
                             fontWeight: "700",
                           }}
                         >
-                          S{s.set}: {s.weight || "–"}kg × {s.reps || "–"}
+                          S{s.set}:{" "}
+                          {formatProgressSet(s, ex.logType || "weight_reps")}
                         </div>
                       ))}
                     </div>
@@ -1439,23 +1498,134 @@ const WorkoutCalendar = ({ weightLogs, muscleGroups }) => {
   );
 };
 
-// ─── WEIGHT MODAL ─────────────────────────────────────────────────────────────
+// ─── WEIGHT MODAL ────────────────────────────────────────────────────────────
 function WeightModal({ exercise, onClose, onSave, existing }) {
+  const logType = exercise.logType || "weight_reps";
+
+  const getEmptyRow = () => {
+    switch (logType) {
+      case "timer":
+        return { set: 1, time: "" };
+      case "reps_only":
+        return { set: 1, reps: "" };
+      case "weight_time":
+        return { set: 1, weight: "", time: "" };
+      default:
+        return { set: 1, weight: "", reps: "" };
+    }
+  };
+
   const [entries, setEntries] = useState(
-    existing?.length ? existing : [{ set: 1, weight: "", reps: "" }],
+    existing?.length ? existing : [getEmptyRow()],
   );
-  const addSet = () =>
-    setEntries((p) => [...p, { set: p.length + 1, weight: "", reps: "" }]);
+
+  const rowColumns =
+    logType === "weight_reps" || logType === "weight_time"
+      ? "32px minmax(0, 1fr) minmax(0, 1fr) 24px"
+      : "32px minmax(0, 1fr) 24px";
+
+  const addSet = () => {
+    const newRow = { set: entries.length + 1 };
+
+    if (logType === "timer") {
+      newRow.time = "";
+    } else if (logType === "reps_only") {
+      newRow.reps = "";
+    } else if (logType === "weight_time") {
+      newRow.weight = "";
+      newRow.time = "";
+    } else {
+      newRow.weight = "";
+      newRow.reps = "";
+    }
+
+    setEntries((p) => [...p, newRow]);
+  };
+
   const removeSet = (i) =>
     setEntries((p) =>
       p.filter((_, idx) => idx !== i).map((e, idx) => ({ ...e, set: idx + 1 })),
     );
+
   const update = (i, field, val) =>
     setEntries((p) => {
       const u = [...p];
       u[i] = { ...u[i], [field]: val };
       return u;
     });
+
+  const getHeaders = () => {
+    if (logType === "timer") return ["#", "SEC", ""];
+    if (logType === "reps_only") return ["#", "REPS", ""];
+    if (logType === "weight_time") return ["#", "KG", "TIME", ""];
+    return ["#", "KG", "REPS", ""];
+  };
+
+  const renderInputs = (e, i) => {
+    if (logType === "timer") {
+      return (
+        <input
+          type="number"
+          placeholder="0"
+          value={e.time || ""}
+          onChange={(v) => update(i, "time", v.target.value)}
+          style={{ ...iInput, width: "100%", minWidth: 0 }}
+        />
+      );
+    }
+
+    if (logType === "reps_only") {
+      return (
+        <input
+          type="number"
+          placeholder="0"
+          value={e.reps || ""}
+          onChange={(v) => update(i, "reps", v.target.value)}
+          style={{ ...iInput, width: "100%", minWidth: 0 }}
+        />
+      );
+    }
+
+    if (logType === "weight_time") {
+      return (
+        <>
+          <input
+            type="number"
+            placeholder="0"
+            value={e.weight || ""}
+            onChange={(v) => update(i, "weight", v.target.value)}
+            style={{ ...iInput, width: "100%", minWidth: 0 }}
+          />
+          <input
+            type="number"
+            placeholder="0"
+            value={e.time || ""}
+            onChange={(v) => update(i, "time", v.target.value)}
+            style={{ ...iInput, width: "100%", minWidth: 0 }}
+          />
+        </>
+      );
+    }
+
+    return (
+      <>
+        <input
+          type="number"
+          placeholder="0"
+          value={e.weight || ""}
+          onChange={(v) => update(i, "weight", v.target.value)}
+          style={{ ...iInput, width: "100%", minWidth: 0 }}
+        />
+        <input
+          type="number"
+          placeholder="0"
+          value={e.reps || ""}
+          onChange={(v) => update(i, "reps", v.target.value)}
+          style={{ ...iInput, width: "100%", minWidth: 0 }}
+        />
+      </>
+    );
+  };
 
   return (
     <div
@@ -1491,7 +1661,11 @@ function WeightModal({ exercise, onClose, onSave, existing }) {
           <div>
             <div style={iLabel}>LOG WEIGHTS</div>
             <div
-              style={{ fontSize: "18px", fontWeight: "700", color: "#F0F0F0" }}
+              style={{
+                fontSize: "18px",
+                fontWeight: "700",
+                color: "#F0F0F0",
+              }}
             >
               {exercise.name}
             </div>
@@ -1509,26 +1683,29 @@ function WeightModal({ exercise, onClose, onSave, existing }) {
             ✕
           </button>
         </div>
+
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "32px 1fr 1fr 24px",
+            gridTemplateColumns: rowColumns,
             gap: "8px",
             marginBottom: "8px",
+            alignItems: "center",
           }}
         >
-          {["#", "KG", "REPS", ""].map((h) => (
+          {getHeaders().map((h) => (
             <div key={h} style={iLabel}>
               {h}
             </div>
           ))}
         </div>
+
         {entries.map((e, i) => (
           <div
             key={i}
             style={{
               display: "grid",
-              gridTemplateColumns: "32px 1fr 1fr 24px",
+              gridTemplateColumns: rowColumns,
               gap: "8px",
               marginBottom: "8px",
               alignItems: "center",
@@ -1544,20 +1721,9 @@ function WeightModal({ exercise, onClose, onSave, existing }) {
             >
               {i + 1}
             </div>
-            <input
-              type="number"
-              placeholder="0"
-              value={e.weight}
-              onChange={(v) => update(i, "weight", v.target.value)}
-              style={iInput}
-            />
-            <input
-              type="number"
-              placeholder="0"
-              value={e.reps}
-              onChange={(v) => update(i, "reps", v.target.value)}
-              style={iInput}
-            />
+
+            {renderInputs(e, i)}
+
             <button
               onClick={() => removeSet(i)}
               style={{
@@ -1574,6 +1740,7 @@ function WeightModal({ exercise, onClose, onSave, existing }) {
             </button>
           </div>
         ))}
+
         <button
           onClick={addSet}
           style={{
@@ -1591,13 +1758,10 @@ function WeightModal({ exercise, onClose, onSave, existing }) {
         >
           + Add Set
         </button>
+
         <button
           onClick={() => {
-            if (entries.length === 0) {
-              onSave(null); // 🔥 signal delete
-            } else {
-              onSave(entries);
-            }
+            onSave(entries);
             onClose();
           }}
           style={{
@@ -1620,7 +1784,6 @@ function WeightModal({ exercise, onClose, onSave, existing }) {
     </div>
   );
 }
-
 // ─── CUSTOM EXERCISE MODAL ────────────────────────────────────────────────────
 function CustomExerciseModal({ muscleGroups, defaultMuscle, onClose, onSave }) {
   const [name, setName] = useState("");
@@ -2066,6 +2229,29 @@ export default function GymTracker() {
     if (h === 0) return `${m} min`;
     return `${h} hr ${m} min`;
   };
+  const formatLastLog = (lastLog, logType) => {
+    if (!Array.isArray(lastLog) || lastLog.length === 0) return "";
+
+    const parts = lastLog
+      .filter((s) => s.weight || s.reps || s.time)
+      .map((s) => {
+        if (logType === "timer") {
+          return `${s.time || "–"} sec`;
+        }
+
+        if (logType === "reps_only") {
+          return `${s.reps || "–"} reps`;
+        }
+
+        if (logType === "weight_time") {
+          return `${s.weight || "–"}kg × ${s.time || "–"} sec`;
+        }
+
+        return `${s.weight || "–"}kg × ${s.reps || "–"}`;
+      });
+
+    return parts.join(" · ");
+  };
   // Derived: is the selected day in the future?
   const selectedDayIdx = weekdays.indexOf(selectedDay);
   const selectedIsFuture = isFutureDay(selectedDayIdx);
@@ -2466,11 +2652,7 @@ export default function GymTracker() {
                     fontWeight: "600",
                   }}
                 >
-                  Last:{" "}
-                  {lastLog
-                    .filter((s) => s.weight || s.reps)
-                    .map((s) => `${s.weight || "–"}kg×${s.reps || "–"}`)
-                    .join(" · ")}
+                  Last: {formatLastLog(lastLog, ex.logType || "weight_reps")}
                 </div>
               )}
               {/* Log weights only allowed for today or past days */}
