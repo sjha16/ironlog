@@ -2167,7 +2167,7 @@ export default function GymTracker() {
       if (stored.customExercises) setCustomExercises(stored.customExercises);
       if (stored.weeklySplit) setWeeklySplit(stored.weeklySplit);
       if (stored.workoutSessions) {
-        setWorkoutSessions(stored.workoutSessions);
+        setWorkoutSessions(normalizeWorkoutSessions(stored.workoutSessions));
       }
     }
 
@@ -2188,38 +2188,65 @@ export default function GymTracker() {
   const startWorkout = () => {
     const dateStr = getTargetDateStr(today);
 
-    setWorkoutSessions((prev) => ({
-      ...prev,
-      [dateStr]: {
-        startTime: new Date().toISOString(),
-        endTime: null,
-        durationMin: null,
-      },
-    }));
+    setWorkoutSessions((prev) => {
+      const daySessions = prev[dateStr] || [];
+
+      // prevent double-start if one is already active
+      if (daySessions.some((s) => !s.endTime)) return prev;
+
+      return {
+        ...prev,
+        [dateStr]: [
+          ...daySessions,
+          {
+            startTime: new Date().toISOString(),
+            endTime: null,
+            durationMin: null,
+          },
+        ],
+      };
+    });
   };
 
   const endWorkout = () => {
     const dateStr = getTargetDateStr(today);
 
     setWorkoutSessions((prev) => {
-      const session = prev[dateStr];
+      const daySessions = prev[dateStr];
+      if (!daySessions || daySessions.length === 0) return prev;
 
-      if (!session?.startTime) return prev;
+      let openIndex = -1;
+      for (let i = daySessions.length - 1; i >= 0; i--) {
+        if (!daySessions[i].endTime) {
+          openIndex = i;
+          break;
+        }
+      }
+
+      if (openIndex === -1) return prev;
 
       const endTime = new Date().toISOString();
-
       const durationMin = Math.max(
         1,
-        Math.round((new Date(endTime) - new Date(session.startTime)) / 60000),
+        Math.round(
+          (new Date(endTime) - new Date(daySessions[openIndex].startTime)) /
+            60000,
+        ),
+      );
+
+      const updatedDaySessions = daySessions.map((s, idx) =>
+        idx === openIndex
+          ? {
+              ...s,
+              endTime,
+              durationMin,
+            }
+          : s,
       );
 
       return {
         ...prev,
-        [dateStr]: {
-          ...session,
-          endTime,
-          durationMin,
-        },
+        [dateStr]: updatedDaySessions,
       };
     });
   };
@@ -2278,8 +2305,29 @@ export default function GymTracker() {
       muscleGroup: mg,
     })),
   );
+  const normalizeWorkoutSessions = (sessions) => {
+    if (!sessions || typeof sessions !== "object") return {};
+
+    const out = {};
+
+    Object.entries(sessions).forEach(([dateKey, value]) => {
+      if (Array.isArray(value)) {
+        out[dateKey] = value;
+      } else if (value && typeof value === "object") {
+        out[dateKey] = [value];
+      }
+    });
+
+    return out;
+  };
 
   const selectedDateStr = getTargetDateStr(selectedDay);
+  const selectedDaySessions = workoutSessions[selectedDateStr] || [];
+  const activeSession = selectedDaySessions.find((s) => !s.endTime) || null;
+  const totalSelectedMinutes = selectedDaySessions.reduce(
+    (sum, s) => sum + (s.durationMin || 0),
+    0,
+  );
   const selectedSession = workoutSessions[selectedDateStr] || null;
 
   const isTodaySelected = selectedDay === today;
@@ -2501,11 +2549,7 @@ export default function GymTracker() {
           muscleGroups[k].exercises.some((e) => e.id === ex.id),
         );
       // Disable logging if viewing a future day
-      const canLog =
-        editingPastEntry ||
-        (isTodaySelected &&
-          !!selectedSession?.startTime &&
-          !selectedSession?.endTime);
+      const canLog = editingPastEntry || (isTodaySelected && !!activeSession);
       const isPastDay = !isTodaySelected && !selectedIsFuture;
 
       return (
@@ -2745,6 +2789,7 @@ export default function GymTracker() {
       deleteCustomExercise,
       selectedDay,
       selectedIsFuture,
+      activeSession,
       editingPastEntry,
       getLastLogForExercise,
       isTodaySelected,
@@ -3037,9 +3082,7 @@ export default function GymTracker() {
             {/* ONLY SHOW START/END BUTTONS ON TODAY */}
             {isTodaySelected && (
               <>
-                {!selectedSession?.startTime || selectedSession?.endTime ? (
-                  /* START BUTTON */
-
+                {!activeSession ? (
                   <button
                     onClick={startWorkout}
                     style={{
@@ -3058,8 +3101,6 @@ export default function GymTracker() {
                     ▶ Start Workout
                   </button>
                 ) : (
-                  /* WORKOUT RUNNING CARD */
-
                   <div
                     style={{
                       background: "#11161F",
@@ -3087,7 +3128,7 @@ export default function GymTracker() {
                       }}
                     >
                       Started:{" "}
-                      {new Date(selectedSession.startTime).toLocaleTimeString(
+                      {new Date(activeSession.startTime).toLocaleTimeString(
                         [],
                         {
                           hour: "2-digit",
@@ -3115,9 +3156,8 @@ export default function GymTracker() {
                 )}
               </>
             )}
-
-            {/* SHOW COMPLETED WORKOUT SUMMARY FOR ANY DAY */}
-            {selectedSession?.startTime && selectedSession?.endTime && (
+            {/* SHOW WORKOUT SUMMARY FOR ANY DAY */}
+            {selectedDaySessions.length > 0 && (
               <div
                 style={{
                   background: "#10141C",
@@ -3134,7 +3174,9 @@ export default function GymTracker() {
                     marginBottom: "6px",
                   }}
                 >
-                  Workout Completed
+                  {isTodaySelected
+                    ? "Today's Workout Summary"
+                    : "Workout Summary"}
                 </div>
 
                 <div
@@ -3145,34 +3187,15 @@ export default function GymTracker() {
                   }}
                 >
                   <div>
-                    Started:{" "}
-                    {new Date(selectedSession.startTime).toLocaleTimeString(
-                      [],
-                      {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      },
-                    )}
-                  </div>
-
-                  <div>
-                    Ended:{" "}
-                    {new Date(selectedSession.endTime).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </div>
-
-                  <div>
-                    Duration:{" "}
+                    Total Duration:{" "}
                     <strong style={{ color: "#F0F0F0" }}>
-                      {formatMinutes(selectedSession.durationMin)}
+                      {formatMinutes(totalSelectedMinutes)}
                     </strong>
                   </div>
+                  <div>Sessions: {selectedDaySessions.length}</div>
                 </div>
               </div>
             )}
-
             {todayExercises.length > 0 && !selectedIsFuture && (
               <div
                 style={{
