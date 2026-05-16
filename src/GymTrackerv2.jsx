@@ -2154,6 +2154,7 @@ export default function GymTracker() {
   const [expandedGroup, setExpandedGroup] = useState(null);
   const [backupMsg, setBackupMsg] = useState("");
   const [workoutSessions, setWorkoutSessions] = useState({});
+  const [editingPastEntry, setEditingPastEntry] = useState(false);
   const fileInputRef = useRef();
 
   // Load from localStorage on mount
@@ -2500,7 +2501,12 @@ export default function GymTracker() {
           muscleGroups[k].exercises.some((e) => e.id === ex.id),
         );
       // Disable logging if viewing a future day
-      const canLog = !selectedIsFuture;
+      const canLog =
+        editingPastEntry ||
+        (isTodaySelected &&
+          !!selectedSession?.startTime &&
+          !selectedSession?.endTime);
+      const isPastDay = !isTodaySelected && !selectedIsFuture;
 
       return (
         <div
@@ -2655,7 +2661,7 @@ export default function GymTracker() {
                   Last: {formatLastLog(lastLog, ex.logType || "weight_reps")}
                 </div>
               )}
-              {/* Log weights only allowed for today or past days */}
+              {/* Log weights only allowed after workout starts on today */}
               {canLog ? (
                 <button
                   onClick={() => setModalExercise(ex)}
@@ -2683,7 +2689,49 @@ export default function GymTracker() {
                     fontStyle: "italic",
                   }}
                 >
-                  🔒 Logging available on {today} only
+                  {isPastDay ? (
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        marginTop: "10px",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          color: "#333",
+                          fontStyle: "italic",
+                        }}
+                      >
+                        📖 Past workout — view only
+                      </span>
+
+                      <button
+                        onClick={() => {
+                          setEditingPastEntry(true);
+                          setModalExercise(ex);
+                        }}
+                        style={{
+                          background: "#1A1D26",
+                          border: "1px solid #2A2D3A",
+                          borderRadius: "6px",
+                          color: "#888",
+                          fontSize: "10px",
+                          padding: "4px 8px",
+                          cursor: "pointer",
+                          fontWeight: "700",
+                        }}
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  ) : selectedSession?.endTime ? (
+                    "✅ Workout completed"
+                  ) : (
+                    "🔒 Start workout to log exercises"
+                  )}
                 </div>
               )}
             </div>
@@ -2695,10 +2743,12 @@ export default function GymTracker() {
       weightLogs,
       muscleGroups,
       deleteCustomExercise,
-      selectedIsFuture,
-      today,
       selectedDay,
+      selectedIsFuture,
+      editingPastEntry,
       getLastLogForExercise,
+      isTodaySelected,
+      selectedSession,
     ],
   );
 
@@ -3830,8 +3880,14 @@ export default function GymTracker() {
       {modalExercise && (
         <WeightModal
           exercise={modalExercise}
-          onClose={() => setModalExercise(null)}
-          onSave={(entries) => saveWeights(modalExercise.id, entries)}
+          onClose={() => {
+            setEditingPastEntry(false);
+            setModalExercise(null);
+          }}
+          onSave={(entries) => {
+            saveWeights(modalExercise.id, entries);
+            setEditingPastEntry(false);
+          }}
           existing={getLogForSelectedDay(modalExercise.id, selectedDay)}
         />
       )}
