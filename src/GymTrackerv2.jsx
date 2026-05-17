@@ -2074,7 +2074,7 @@ function SplitEditorModal({
               marginBottom: "16px",
             }}
           >
-            ⚠ No muscles selected — this day will be a Rest Day
+            ⚠ No muscle groups selected yet
           </div>
         )}
         <div style={{ display: "flex", gap: "10px" }}>
@@ -2143,6 +2143,7 @@ export default function GymTracker() {
   const [selectedDay, setSelectedDay] = useState(today);
 
   const [weightLogs, setWeightLogs] = useState({});
+  const [dayStatus, setDayStatus] = useState({});
 
   const [customExercises, setCustomExercises] = useState({});
   const [weeklySplit, setWeeklySplit] = useState(DEFAULT_SPLIT);
@@ -2169,6 +2170,9 @@ export default function GymTracker() {
       if (stored.workoutSessions) {
         setWorkoutSessions(normalizeWorkoutSessions(stored.workoutSessions));
       }
+      if (stored.dayStatus) {
+        setDayStatus(stored.dayStatus);
+      }
     }
 
     setLoading(false);
@@ -2182,8 +2186,16 @@ export default function GymTracker() {
       customExercises,
       weeklySplit,
       workoutSessions,
+      dayStatus,
     });
-  }, [loading, weightLogs, customExercises, weeklySplit, workoutSessions]);
+  }, [
+    loading,
+    weightLogs,
+    customExercises,
+    dayStatus,
+    weeklySplit,
+    workoutSessions,
+  ]);
 
   const startWorkout = () => {
     const dateStr = getTargetDateStr(today);
@@ -2322,15 +2334,32 @@ export default function GymTracker() {
   };
 
   const selectedDateStr = getTargetDateStr(selectedDay);
+
+  const isTodaySelected = selectedDay === today;
+
+  // const hasWorkoutDataForSelectedDay =
+  //   (workoutSessions[selectedDateStr]?.length || 0) > 0 ||
+  //   Object.keys(weightLogs).some((exId) =>
+  //     Object.keys(weightLogs[exId] || {}).some((key) =>
+  //       key.endsWith(selectedDateStr),
+  //     ),
+  //   );
+
+  const currentDayStatus = dayStatus[selectedDateStr];
+
+  const shouldAskDayType = isTodaySelected && !currentDayStatus;
+
+  // const effectiveDayStatus =
+  //   currentDayStatus || (hasWorkoutDataForSelectedDay ? "workout" : null);
   const selectedDaySessions = workoutSessions[selectedDateStr] || [];
   const activeSession = selectedDaySessions.find((s) => !s.endTime) || null;
   const totalSelectedMinutes = selectedDaySessions.reduce(
     (sum, s) => sum + (s.durationMin || 0),
     0,
   );
+  const isRestDay = currentDayStatus === "rest";
+  const isWorkoutDay = currentDayStatus === "workout";
   const selectedSession = workoutSessions[selectedDateStr] || null;
-
-  const isTodaySelected = selectedDay === today;
 
   const completedCount = todayExercises.filter((ex) => {
     const logs = weightLogs[ex.id];
@@ -2441,6 +2470,7 @@ export default function GymTracker() {
         weightLogs,
         customExercises,
         workoutSessions,
+        dayStatus,
         weeklySplit,
         exportedAt: new Date().toISOString(),
       };
@@ -2498,6 +2528,7 @@ export default function GymTracker() {
         if (d.weightLogs) setWeightLogs(d.weightLogs);
         //if (d.completedExercises) setCompletedExercises(d.completedExercises);
         if (d.customExercises) setCustomExercises(d.customExercises);
+        if (d.dayStatus) setDayStatus(d.dayStatus);
         if (d.workoutSessions) setWorkoutSessions(d.workoutSessions);
         if (d.weeklySplit) setWeeklySplit(d.weeklySplit);
         setBackupMsg("✓ Data restored! Welcome back.");
@@ -2523,6 +2554,7 @@ export default function GymTracker() {
       setCustomExercises({});
       setWeeklySplit(DEFAULT_SPLIT);
       setWorkoutSessions({});
+      setDayStatus({});
 
       setBackupMsg("✓ All data cleared.");
       setTimeout(() => setBackupMsg(""), 3500);
@@ -2549,7 +2581,9 @@ export default function GymTracker() {
           muscleGroups[k].exercises.some((e) => e.id === ex.id),
         );
       // Disable logging if viewing a future day
-      const canLog = editingPastEntry || (isTodaySelected && !!activeSession);
+      const canLog =
+        editingPastEntry ||
+        (isTodaySelected && isWorkoutDay && !!activeSession);
       const isPastDay = !isTodaySelected && !selectedIsFuture;
 
       return (
@@ -2792,6 +2826,7 @@ export default function GymTracker() {
       activeSession,
       editingPastEntry,
       getLastLogForExercise,
+      isWorkoutDay,
       isTodaySelected,
       selectedSession,
     ],
@@ -2938,6 +2973,124 @@ export default function GymTracker() {
         style={{ padding: "18px 20px 100px", animation: "fadeSlide 0.3s ease" }}
       >
         {/* ══════════════ TODAY TAB ══════════════ */}
+        {currentDayStatus && (
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "6px 10px",
+              borderRadius: "999px",
+              marginBottom: "12px",
+              fontSize: "11px",
+              fontWeight: "700",
+              letterSpacing: "0.5px",
+              background:
+                currentDayStatus === "workout" ? "#15311F" : "#1C1A12",
+              color: currentDayStatus === "workout" ? "#2ECC71" : "#FFD700",
+              border:
+                currentDayStatus === "workout"
+                  ? "1px solid #2ECC7130"
+                  : "1px solid #FFD70030",
+            }}
+          >
+            {currentDayStatus === "workout" ? "Workout Day" : "Rest Day"}
+          </div>
+        )}
+        {currentDayStatus && (
+          <button
+            onClick={() =>
+              setDayStatus((prev) => {
+                const updated = { ...prev };
+                delete updated[selectedDateStr];
+                return updated;
+              })
+            }
+            style={{
+              marginLeft: "10px",
+              background: "#1A1D26",
+              border: "1px solid #2A2D3A",
+              borderRadius: "8px",
+              color: "#888",
+              padding: "6px 10px",
+              cursor: "pointer",
+              fontSize: "11px",
+              fontWeight: "700",
+            }}
+          >
+            Change
+          </button>
+        )}
+
+        {shouldAskDayType && (
+          <div
+            style={{
+              background: "#10141C",
+              border: "1px solid #2A2D3A",
+              borderRadius: "14px",
+              padding: "14px",
+              marginBottom: "14px",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "13px",
+                fontWeight: "700",
+                color: "#F0F0F0",
+                marginBottom: "8px",
+              }}
+            >
+              Is this a workout day or a rest day?
+            </div>
+
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button
+                onClick={() =>
+                  setDayStatus((prev) => ({
+                    ...prev,
+                    [selectedDateStr]: "workout",
+                  }))
+                }
+                style={{
+                  flex: 1,
+                  background: "linear-gradient(135deg,#2ECC71,#27AE60)",
+                  border: "none",
+                  borderRadius: "10px",
+                  color: "#fff",
+                  padding: "10px",
+                  cursor: "pointer",
+                  fontWeight: "700",
+                  fontSize: "13px",
+                }}
+              >
+                Workout Day
+              </button>
+
+              <button
+                onClick={() =>
+                  setDayStatus((prev) => ({
+                    ...prev,
+                    [selectedDateStr]: "rest",
+                  }))
+                }
+                style={{
+                  flex: 1,
+                  background: "#1A1D26",
+                  border: "1px solid #2A2D3A",
+                  borderRadius: "10px",
+                  color: "#888",
+                  padding: "10px",
+                  cursor: "pointer",
+                  fontWeight: "700",
+                  fontSize: "13px",
+                }}
+              >
+                Rest Day
+              </button>
+            </div>
+          </div>
+        )}
+
         {activeTab === "today" && (
           <div>
             {/* Day picker — future days dimmed but still selectable to view the split */}
@@ -3059,28 +3212,33 @@ export default function GymTracker() {
                       .join(" + ")
                   : "Rest Day"}
               </div>
-              <button
-                onClick={() => setSplitEditorDay(selectedDay)}
-                style={{
-                  background: "#1A1D26",
-                  border: "1px solid #2A2D3A",
-                  borderRadius: "8px",
-                  color: "#FF8C42",
-                  padding: "6px 13px",
-                  cursor: "pointer",
-                  fontSize: "12px",
-                  fontWeight: "700",
-                  fontFamily: "'DM Sans',sans-serif",
-                }}
-              >
-                ✏ Edit Split
-              </button>
+              {currentDayStatus !== "rest" && (
+                <button
+                  onClick={() => {
+                    if (currentDayStatus === "rest") return;
+                    setSplitEditorDay(selectedDay);
+                  }}
+                  style={{
+                    background: "#1A1D26",
+                    border: "1px solid #2A2D3A",
+                    borderRadius: "8px",
+                    color: "#FF8C42",
+                    padding: "6px 13px",
+                    cursor: "pointer",
+                    fontSize: "12px",
+                    fontWeight: "700",
+                    fontFamily: "'DM Sans',sans-serif",
+                  }}
+                >
+                  ✏ Edit Split
+                </button>
+              )}
             </div>
 
             {/* WORKOUT SESSION SECTION */}
 
             {/* ONLY SHOW START/END BUTTONS ON TODAY */}
-            {isTodaySelected && (
+            {isTodaySelected && isWorkoutDay && (
               <>
                 {!activeSession ? (
                   <button
@@ -3156,6 +3314,22 @@ export default function GymTracker() {
                 )}
               </>
             )}
+            {isTodaySelected && isRestDay && (
+              <div
+                style={{
+                  background: "#10141C",
+                  border: "1px solid #2A2D3A",
+                  borderRadius: "14px",
+                  padding: "14px",
+                  marginBottom: "14px",
+                  textAlign: "center",
+                  color: "#666",
+                }}
+              >
+                🏖️ Rest day — no workout scheduled
+              </div>
+            )}
+
             {/* SHOW WORKOUT SUMMARY FOR ANY DAY */}
             {selectedDaySessions.length > 0 && (
               <div
@@ -3309,7 +3483,7 @@ export default function GymTracker() {
               </div>
             )}
 
-            {todayExercises.length === 0 ? (
+            {currentDayStatus === "rest" ? (
               <div
                 style={{
                   textAlign: "center",
@@ -3327,21 +3501,28 @@ export default function GymTracker() {
                   Recovery is where gains are made.
                 </div>
                 <button
-                  onClick={() => setSplitEditorDay(selectedDay)}
+                  onClick={() => {
+                    if (currentDayStatus === "rest") return;
+                    setSplitEditorDay(selectedDay);
+                  }}
                   style={{
                     marginTop: "20px",
                     background: "#1A1D26",
                     border: "1px solid #2A2D3A",
                     borderRadius: "10px",
-                    color: "#FF8C42",
+                    color: currentDayStatus === "rest" ? "#555" : "#FF8C42",
                     padding: "12px 24px",
-                    cursor: "pointer",
+                    cursor:
+                      currentDayStatus === "rest" ? "not-allowed" : "pointer",
                     fontSize: "13px",
                     fontWeight: "700",
                     fontFamily: "'DM Sans',sans-serif",
+                    opacity: currentDayStatus === "rest" ? 0.7 : 1,
                   }}
                 >
-                  + Add Muscles for {selectedDay}
+                  {currentDayStatus === "rest"
+                    ? "🔒 Rest Day — Split Locked"
+                    : `+ Add Muscles for ${selectedDay}`}
                 </button>
               </div>
             ) : (
