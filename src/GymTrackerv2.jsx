@@ -1787,6 +1787,7 @@ function WeightModal({ exercise, onClose, onSave, existing }) {
 // ─── CUSTOM EXERCISE MODAL ────────────────────────────────────────────────────
 function CustomExerciseModal({ muscleGroups, defaultMuscle, onClose, onSave }) {
   const [name, setName] = useState("");
+  const [logType, setLogType] = useState("weight_reps");
   const [sets, setSets] = useState("3x10-12");
   const [tip, setTip] = useState("");
   const [targetMuscle, setTargetMuscle] = useState(
@@ -1803,6 +1804,7 @@ function CustomExerciseModal({ muscleGroups, defaultMuscle, onClose, onSave }) {
         tip,
         instructor: "Custom",
         isCustom: true,
+        logType,
       },
       targetMuscle,
     );
@@ -1880,6 +1882,19 @@ function CustomExerciseModal({ muscleGroups, defaultMuscle, onClose, onSave }) {
             placeholder="e.g. 3x10-12"
             style={iInput}
           />
+        </div>
+        <div style={{ marginBottom: "14px" }}>
+          <label style={iLabel}>Log Type</label>
+          <select
+            value={logType}
+            onChange={(e) => setLogType(e.target.value)}
+            style={{ ...iInput, appearance: "none", cursor: "pointer" }}
+          >
+            <option value="weight_reps">Weight + Reps</option>
+            <option value="reps_only">Reps Only</option>
+            <option value="timer">Timer</option>
+            <option value="weight_time">Weight + Time</option>
+          </select>
         </div>
         <div style={{ marginBottom: "14px" }}>
           <label style={iLabel}>Target Muscle Group</label>
