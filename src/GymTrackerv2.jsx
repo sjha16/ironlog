@@ -105,7 +105,7 @@ const BASE_MUSCLE_GROUPS = {
         sets: "4x6-10",
         tip: "Full ROM. Think elbows to hips, not pulling bar to chest.",
         instructor: "Athlean-X",
-        logType: "bodyweight_weight_reps",
+        logType: "weight_reps",
       },
       {
         id: "b3",
