@@ -1,4 +1,4 @@
-package com.sumit.app;
+package com.sjapps.ironlog;
 
 import com.getcapacitor.BridgeActivity;
 
