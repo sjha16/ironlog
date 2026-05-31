@@ -41,6 +41,48 @@ export function formatDateLocal(date) {
     String(d.getDate()).padStart(2, "0")
   );
 }
+
+export function getStartOfWeek(date) {
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+
+  const dayIdx = start.getDay() === 0 ? 6 : start.getDay() - 1;
+  start.setDate(start.getDate() - dayIdx);
+
+  return start;
+}
+
+export function getWeekDates(offset = 0) {
+  const start = getStartOfWeek(new Date());
+  start.setDate(start.getDate() + offset * 7);
+
+  return weekdays.map((_, idx) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + idx);
+    return date;
+  });
+}
+
+export function formatWeekRange(datesOrOffset = 0) {
+  const dates = Array.isArray(datesOrOffset)
+    ? datesOrOffset
+    : getWeekDates(datesOrOffset);
+  const start = dates[0];
+  const end = dates[dates.length - 1];
+
+  const formatDayMonth = (date) =>
+    date.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+    });
+
+  if (start.getFullYear() === end.getFullYear()) {
+    return `${formatDayMonth(start)} - ${formatDayMonth(end)} ${end.getFullYear()}`;
+  }
+
+  return `${formatDayMonth(start)} ${start.getFullYear()} - ${formatDayMonth(end)} ${end.getFullYear()}`;
+}
+
 export const getTargetDateStr = (selectedDay) => {
   const today = new Date();
 

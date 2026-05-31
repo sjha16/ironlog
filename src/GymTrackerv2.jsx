@@ -19,6 +19,9 @@ import {
   TODAY_IDX,
   isFutureDay,
   getTargetDateStr,
+  getWeekDates,
+  formatDateLocal,
+  formatWeekRange,
 } from "./utils/dateUtils";
 
 import { BASE_MUSCLE_GROUPS, DEFAULT_SPLIT } from "./data/muscleGroups";
@@ -31,6 +34,7 @@ export default function GymTracker() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("today");
   const [selectedDay, setSelectedDay] = useState(today);
+  const [weekOffset, setWeekOffset] = useState(0);
 
   const [weightLogs, setWeightLogs] = useState({});
   const [dayStatus, setDayStatus] = useState({});
@@ -184,7 +188,16 @@ export default function GymTracker() {
   };
   // Derived: is the selected day in the future?
   const selectedDayIdx = weekdays.indexOf(selectedDay);
-  const selectedIsFuture = isFutureDay(selectedDayIdx);
+  const selectedWeekDates = useMemo(
+    () => getWeekDates(weekOffset),
+    [weekOffset],
+  );
+  const selectedDateStr = formatDateLocal(selectedWeekDates[selectedDayIdx]);
+  const selectedIsFuture = weekOffset === 0 && isFutureDay(selectedDayIdx);
+  const selectedWeekRange = useMemo(
+    () => formatWeekRange(selectedWeekDates),
+    [selectedWeekDates],
+  );
 
   const muscleGroups = useMemo(
     () =>
@@ -200,12 +213,29 @@ export default function GymTracker() {
     [customExercises],
   );
 
-  const todayMuscles = weeklySplit[selectedDay] || [];
-  const todayExercises = todayMuscles.flatMap((mg) =>
-    (muscleGroups[mg]?.exercises || []).map((ex) => ({
-      ...ex,
-      muscleGroup: mg,
-    })),
+  const todayMuscles = useMemo(
+    () => weeklySplit[selectedDay] || [],
+    [selectedDay, weeklySplit],
+  );
+  const todayExercises = useMemo(
+    () =>
+      todayMuscles.flatMap((mg) =>
+        (muscleGroups[mg]?.exercises || []).map((ex) => ({
+          ...ex,
+          muscleGroup: mg,
+        })),
+      ),
+    [muscleGroups, todayMuscles],
+  );
+  const allExercises = useMemo(
+    () =>
+      Object.entries(muscleGroups).flatMap(([mg, group]) =>
+        group.exercises.map((ex) => ({
+          ...ex,
+          muscleGroup: mg,
+        })),
+      ),
+    [muscleGroups],
   );
   const normalizeWorkoutSessions = (sessions) => {
     if (!sessions || typeof sessions !== "object") return {};
@@ -223,9 +253,7 @@ export default function GymTracker() {
     return out;
   };
 
-  const selectedDateStr = getTargetDateStr(selectedDay);
-
-  const isTodaySelected = selectedDay === today;
+  const isTodaySelected = weekOffset === 0 && selectedDay === today;
 
   // const hasWorkoutDataForSelectedDay =
   //   (workoutSessions[selectedDateStr]?.length || 0) > 0 ||
@@ -254,7 +282,70 @@ export default function GymTracker() {
   const isWorkoutDay = currentDayStatus === "workout";
   //const selectedSession = workoutSessions[selectedDateStr] || null;
 
-  const completedCount = todayExercises.filter((ex) => {
+  const loggedExercisesForSelectedDate = useMemo(
+    () =>
+      allExercises.filter((ex) =>
+        Object.keys(weightLogs[ex.id] || {}).some((key) =>
+          key.endsWith(selectedDateStr),
+        ),
+      ),
+    [allExercises, selectedDateStr, weightLogs],
+  );
+
+  const selectedExercises = useMemo(() => {
+    const seen = new Set();
+    const baseExercises = [...todayExercises, ...loggedExercisesForSelectedDate];
+
+    return baseExercises.filter((ex) => {
+      if (seen.has(ex.id)) return false;
+      seen.add(ex.id);
+      return true;
+    });
+  }, [loggedExercisesForSelectedDate, todayExercises]);
+
+  const selectedMuscles = useMemo(() => {
+    const muscles = [...todayMuscles];
+
+    loggedExercisesForSelectedDate.forEach((ex) => {
+      if (ex.muscleGroup && !muscles.includes(ex.muscleGroup)) {
+        muscles.push(ex.muscleGroup);
+      }
+    });
+
+    return muscles;
+  }, [loggedExercisesForSelectedDate, todayMuscles]);
+
+  const selectedExercisesByMuscle = useMemo(
+    () =>
+      selectedExercises.reduce((acc, ex) => {
+        if (!acc[ex.muscleGroup]) acc[ex.muscleGroup] = [];
+        acc[ex.muscleGroup].push(ex);
+        return acc;
+      }, {}),
+    [selectedExercises],
+  );
+
+  const selectedWeekLoggedDates = useMemo(() => {
+    const dates = new Set();
+    const datePattern = /\d{4}-\d{2}-\d{2}/;
+
+    Object.values(weightLogs).forEach((logs) => {
+      Object.keys(logs || {}).forEach((dateKey) => {
+        const match = dateKey.match(datePattern);
+        if (match) dates.add(match[0]);
+      });
+    });
+
+    Object.entries(workoutSessions).forEach(([dateStr, sessions]) => {
+      if (Array.isArray(sessions) && sessions.length > 0) {
+        dates.add(dateStr);
+      }
+    });
+
+    return dates;
+  }, [weightLogs, workoutSessions]);
+
+  const completedCount = selectedExercises.filter((ex) => {
     const logs = weightLogs[ex.id];
     if (!logs) return false;
 
@@ -262,9 +353,7 @@ export default function GymTracker() {
   }).length;
 
   const progress =
-    todayExercises.length > 0
-      ? (completedCount / todayExercises.length) * 100
-      : 0;
+    todayExercises.length > 0 ? (completedCount / todayExercises.length) * 100 : 0;
   const totalCustom = Object.values(customExercises).flat().length;
   const allExerciseCount = Object.values(muscleGroups).reduce(
     (s, g) => s + g.exercises.length,
@@ -321,8 +410,7 @@ export default function GymTracker() {
   // saveWeights: uses selected day’s actual calendar date
   const saveWeights = useCallback(
     (exId, entries) => {
-      const dateStr = getTargetDateStr(selectedDay);
-      const dateKey = `${selectedDay} · ${dateStr}`;
+      const dateKey = `${selectedDay} · ${selectedDateStr}`;
 
       setWeightLogs((prev) => {
         const logs = prev[exId] || {};
@@ -354,7 +442,7 @@ export default function GymTracker() {
         };
       });
     },
-    [selectedDay],
+    [selectedDay, selectedDateStr],
   );
   const getLastLogForExercise = useCallback(
     (exId) => {
@@ -376,17 +464,17 @@ export default function GymTracker() {
   );
 
   const getLogForSelectedDay = useCallback(
-    (exId, selectedDay) => {
+    (exId) => {
       const logs = weightLogs[exId];
       if (!logs) return null;
 
       const entry = Object.entries(logs).find(([key]) =>
-        key.endsWith(getTargetDateStr(selectedDay)),
+        key.endsWith(selectedDateStr),
       );
 
       return entry ? entry[1] : null;
     },
-    [weightLogs],
+    [selectedDateStr, weightLogs],
   );
 
   const addCustomExercise = useCallback(
@@ -509,9 +597,7 @@ export default function GymTracker() {
         const logs = weightLogs[ex.id];
         if (!logs) return false;
 
-        return Object.keys(logs).some((key) =>
-          key.endsWith(getTargetDateStr(selectedDay)),
-        );
+        return Object.keys(logs).some((key) => key.endsWith(selectedDateStr));
       })();
       const lastLog = getLastLogForExercise(ex.id);
       const muscleKey =
@@ -760,7 +846,7 @@ export default function GymTracker() {
       weightLogs,
       muscleGroups,
       deleteCustomExercise,
-      selectedDay,
+      selectedDateStr,
       selectedIsFuture,
       activeSession,
       editingPastEntry,
@@ -1032,6 +1118,71 @@ export default function GymTracker() {
 
         {activeTab === "today" && (
           <div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "10px",
+                marginBottom: "10px",
+              }}
+            >
+              <button
+                onClick={() => setWeekOffset((offset) => offset - 1)}
+                style={{
+                  width: "34px",
+                  height: "34px",
+                  borderRadius: "10px",
+                  border: "1px solid #2A2D3A",
+                  background: "#1A1D26",
+                  color: "#FF8C42",
+                  cursor: "pointer",
+                  fontSize: "18px",
+                  fontWeight: "900",
+                  lineHeight: 1,
+                  flexShrink: 0,
+                }}
+                aria-label="Previous week"
+              >
+                ‹
+              </button>
+
+              <div
+                style={{
+                  flex: 1,
+                  textAlign: "center",
+                  color: "#F0F0F0",
+                  fontSize: "13px",
+                  fontWeight: "800",
+                  letterSpacing: "0.3px",
+                }}
+              >
+                {selectedWeekRange}
+              </div>
+
+              <button
+                onClick={() =>
+                  setWeekOffset((offset) => Math.min(offset + 1, 0))
+                }
+                disabled={weekOffset === 0}
+                style={{
+                  width: "34px",
+                  height: "34px",
+                  borderRadius: "10px",
+                  border: "1px solid #2A2D3A",
+                  background: weekOffset === 0 ? "#111" : "#1A1D26",
+                  color: weekOffset === 0 ? "#2A2D3A" : "#FF8C42",
+                  cursor: weekOffset === 0 ? "not-allowed" : "pointer",
+                  fontSize: "18px",
+                  fontWeight: "900",
+                  lineHeight: 1,
+                  flexShrink: 0,
+                }}
+                aria-label="Next week"
+              >
+                ›
+              </button>
+            </div>
             {/* Day picker — future days dimmed but still selectable to view the split */}
             <div
               style={{
@@ -1043,14 +1194,17 @@ export default function GymTracker() {
               }}
             >
               {weekdays.map((day, idx) => {
-                const isFuture = isFutureDay(idx);
+                const dateStr = formatDateLocal(selectedWeekDates[idx]);
+                const isFuture = weekOffset === 0 && isFutureDay(idx);
                 const isActive = selectedDay === day;
+                const hasLoggedData = selectedWeekLoggedDates.has(dateStr);
                 return (
                   <button
                     key={day}
                     onClick={() => setSelectedDay(day)}
                     style={{
                       minWidth: "48px",
+                      flex: 1,
                       padding: "9px 4px",
                       borderRadius: "10px",
                       border: "none",
@@ -1068,7 +1222,6 @@ export default function GymTracker() {
                       fontSize: "11px",
                       fontWeight: "700",
                       letterSpacing: "0.5px",
-                      flexShrink: 0,
                       outline:
                         day === today && !isActive
                           ? "1px solid #FF8C4240"
@@ -1076,9 +1229,24 @@ export default function GymTracker() {
                       fontFamily: "'DM Sans',sans-serif",
                       transition: "all 0.15s",
                       position: "relative",
+                      minHeight: "36px",
                     }}
                   >
                     {day}
+                    {hasLoggedData && !isFuture && (
+                      <span
+                        style={{
+                          position: "absolute",
+                          left: "50%",
+                          bottom: "4px",
+                          width: "5px",
+                          height: "5px",
+                          borderRadius: "50%",
+                          background: isActive ? "#fff" : "#00AA00",
+                          transform: "translateX(-50%)",
+                        }}
+                      />
+                    )}
                     {isFuture && (
                       <span
                         style={{
@@ -1145,8 +1313,8 @@ export default function GymTracker() {
               }}
             >
               <div style={{ fontSize: "12px", color: "#444" }}>
-                {todayMuscles.length > 0
-                  ? todayMuscles
+                {selectedMuscles.length > 0
+                  ? selectedMuscles
                       .map((mg) => muscleGroups[mg]?.label)
                       .join(" + ")
                   : "Rest Day"}
@@ -1309,7 +1477,7 @@ export default function GymTracker() {
                 </div>
               </div>
             )}
-            {todayExercises.length > 0 && !selectedIsFuture && (
+            {selectedExercises.length > 0 && !selectedIsFuture && (
               <div
                 style={{
                   background: "linear-gradient(135deg,#0F1117,#141720)",
@@ -1398,7 +1566,7 @@ export default function GymTracker() {
                         flexWrap: "wrap",
                       }}
                     >
-                      {todayMuscles.map((mg) => (
+                      {selectedMuscles.map((mg) => (
                         <span
                           key={mg}
                           style={{
@@ -1466,9 +1634,10 @@ export default function GymTracker() {
               </div>
             ) : (
               <>
-                {todayMuscles.map((mg) => {
+                {selectedMuscles.map((mg) => {
                   const group = muscleGroups[mg];
                   if (!group) return null;
+                  const exercises = selectedExercisesByMuscle[mg] || [];
                   return (
                     <div key={mg} style={{ marginBottom: "22px" }}>
                       <div
@@ -1501,10 +1670,10 @@ export default function GymTracker() {
                           }}
                         />
                       </div>
-                      {group.exercises.map((ex) => (
+                      {exercises.map((ex) => (
                         <ExerciseCard
                           key={ex.id}
-                          ex={{ ...ex, muscleGroup: mg }}
+                          ex={ex}
                           group={group}
                           showDelete={true}
                         />
@@ -2063,7 +2232,7 @@ export default function GymTracker() {
             saveWeights(modalExercise.id, entries);
             setEditingPastEntry(false);
           }}
-          existing={getLogForSelectedDay(modalExercise.id, selectedDay)}
+          existing={getLogForSelectedDay(modalExercise.id)}
         />
       )}
       {showCustomModal && (
