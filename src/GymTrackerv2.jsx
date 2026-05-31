@@ -41,6 +41,7 @@ export default function GymTracker() {
 
   const [customExercises, setCustomExercises] = useState({});
   const [weeklySplit, setWeeklySplit] = useState(DEFAULT_SPLIT);
+  const [splitHistory, setSplitHistory] = useState({});
   const [modalExercise, setModalExercise] = useState(null);
   const [showCustomModal, setShowCustomModal] = useState(false);
   const [customModalDefaultMuscle, setCustomModalDefaultMuscle] =
@@ -61,6 +62,7 @@ export default function GymTracker() {
       if (stored.weightLogs) setWeightLogs(stored.weightLogs);
       if (stored.customExercises) setCustomExercises(stored.customExercises);
       if (stored.weeklySplit) setWeeklySplit(stored.weeklySplit);
+      if (stored.splitHistory) setSplitHistory(stored.splitHistory);
       if (stored.workoutSessions) {
         setWorkoutSessions(normalizeWorkoutSessions(stored.workoutSessions));
       }
@@ -79,6 +81,7 @@ export default function GymTracker() {
       weightLogs,
       customExercises,
       weeklySplit,
+      splitHistory,
       workoutSessions,
       dayStatus,
     });
@@ -88,6 +91,7 @@ export default function GymTracker() {
     customExercises,
     dayStatus,
     weeklySplit,
+    splitHistory,
     workoutSessions,
   ]);
 
@@ -199,6 +203,116 @@ export default function GymTracker() {
     [selectedWeekDates],
   );
 
+  const getWeekdayForDate = useCallback(
+    (dateStr) => {
+      const date = new Date(`${dateStr}T00:00:00`);
+      if (Number.isNaN(date.getTime())) return selectedDay;
+
+      const dayIdx = date.getDay() === 0 ? 6 : date.getDay() - 1;
+      return weekdays[dayIdx];
+    },
+    [selectedDay],
+  );
+
+  const getLoggedSplitForDate = useCallback(
+    (dateStr) => {
+      const exerciseMuscleMap = {};
+
+      Object.entries(BASE_MUSCLE_GROUPS).forEach(([muscleKey, group]) => {
+        group.exercises.forEach((ex) => {
+          exerciseMuscleMap[ex.id] = muscleKey;
+        });
+      });
+
+      Object.entries(customExercises).forEach(([muscleKey, exercises]) => {
+        (exercises || []).forEach((ex) => {
+          exerciseMuscleMap[ex.id] = muscleKey;
+        });
+      });
+
+      const loggedMuscles = [];
+
+      Object.entries(weightLogs).forEach(([exId, logs]) => {
+        const muscleKey = exerciseMuscleMap[exId];
+        if (!muscleKey || loggedMuscles.includes(muscleKey)) return;
+
+        const hasLogForDate = Object.keys(logs || {}).some((key) =>
+          key.endsWith(dateStr),
+        );
+
+        if (hasLogForDate) loggedMuscles.push(muscleKey);
+      });
+
+      return loggedMuscles;
+    },
+    [customExercises, weightLogs],
+  );
+
+  const splitsMatch = useCallback((a = [], b = []) => {
+    if (a.length !== b.length) return false;
+    return a.every((item, idx) => item === b[idx]);
+  }, []);
+
+  const ensureSplitSnapshot = useCallback(
+    (dateStr, source = "weekly") => {
+      if (!dateStr) return;
+
+      setSplitHistory((prev) => {
+        const weekday = getWeekdayForDate(dateStr);
+        const snapshot =
+          source === "logs"
+            ? getLoggedSplitForDate(dateStr)
+            : weeklySplit[weekday] || [];
+
+        if (Array.isArray(prev[dateStr])) {
+          if (
+            source === "logs" &&
+            snapshot.length > 0 &&
+            !splitsMatch(prev[dateStr], snapshot)
+          ) {
+            return {
+              ...prev,
+              [dateStr]: [...snapshot],
+            };
+          }
+
+          return prev;
+        }
+
+        return {
+          ...prev,
+          [dateStr]: [...snapshot],
+        };
+      });
+    },
+    [getLoggedSplitForDate, getWeekdayForDate, splitsMatch, weeklySplit],
+  );
+
+  // Historical dates must render from splitHistory only so old weeks do not inherit the current weekly split.
+  const getVisibleSplitForDate = useCallback(
+    (dateStr, day, offset) => {
+      if (offset === 0) return weeklySplit[day] || [];
+      const loggedSplit = getLoggedSplitForDate(dateStr);
+      if (loggedSplit.length > 0) return loggedSplit;
+      return splitHistory[dateStr] || [];
+    },
+    [getLoggedSplitForDate, splitHistory, weeklySplit],
+  );
+
+  const updateSplitSnapshot = useCallback((dateStr, newSplit) => {
+    if (!dateStr) return;
+
+    setSplitHistory((prev) => ({
+      ...prev,
+      [dateStr]: [...newSplit],
+    }));
+  }, []);
+
+  useEffect(() => {
+    if (loading) return;
+    ensureSplitSnapshot(selectedDateStr, weekOffset === 0 ? "weekly" : "logs");
+  }, [ensureSplitSnapshot, loading, selectedDateStr, weekOffset]);
+
   const muscleGroups = useMemo(
     () =>
       Object.fromEntries(
@@ -214,8 +328,8 @@ export default function GymTracker() {
   );
 
   const todayMuscles = useMemo(
-    () => weeklySplit[selectedDay] || [],
-    [selectedDay, weeklySplit],
+    () => getVisibleSplitForDate(selectedDateStr, selectedDay, weekOffset),
+    [getVisibleSplitForDate, selectedDateStr, selectedDay, weekOffset],
   );
   const todayExercises = useMemo(
     () =>
@@ -226,16 +340,6 @@ export default function GymTracker() {
         })),
       ),
     [muscleGroups, todayMuscles],
-  );
-  const allExercises = useMemo(
-    () =>
-      Object.entries(muscleGroups).flatMap(([mg, group]) =>
-        group.exercises.map((ex) => ({
-          ...ex,
-          muscleGroup: mg,
-        })),
-      ),
-    [muscleGroups],
   );
   const normalizeWorkoutSessions = (sessions) => {
     if (!sessions || typeof sessions !== "object") return {};
@@ -282,38 +386,19 @@ export default function GymTracker() {
   const isWorkoutDay = currentDayStatus === "workout";
   //const selectedSession = workoutSessions[selectedDateStr] || null;
 
-  const loggedExercisesForSelectedDate = useMemo(
-    () =>
-      allExercises.filter((ex) =>
-        Object.keys(weightLogs[ex.id] || {}).some((key) =>
-          key.endsWith(selectedDateStr),
-        ),
-      ),
-    [allExercises, selectedDateStr, weightLogs],
-  );
-
   const selectedExercises = useMemo(() => {
     const seen = new Set();
-    const baseExercises = [...todayExercises, ...loggedExercisesForSelectedDate];
 
-    return baseExercises.filter((ex) => {
+    return todayExercises.filter((ex) => {
       if (seen.has(ex.id)) return false;
       seen.add(ex.id);
       return true;
     });
-  }, [loggedExercisesForSelectedDate, todayExercises]);
+  }, [todayExercises]);
 
   const selectedMuscles = useMemo(() => {
-    const muscles = [...todayMuscles];
-
-    loggedExercisesForSelectedDate.forEach((ex) => {
-      if (ex.muscleGroup && !muscles.includes(ex.muscleGroup)) {
-        muscles.push(ex.muscleGroup);
-      }
-    });
-
-    return muscles;
-  }, [loggedExercisesForSelectedDate, todayMuscles]);
+    return [...todayMuscles];
+  }, [todayMuscles]);
 
   const selectedExercisesByMuscle = useMemo(
     () =>
@@ -499,6 +584,7 @@ export default function GymTracker() {
         workoutSessions,
         dayStatus,
         weeklySplit,
+        splitHistory,
         exportedAt: new Date().toISOString(),
       };
 
@@ -558,6 +644,7 @@ export default function GymTracker() {
         if (d.dayStatus) setDayStatus(d.dayStatus);
         if (d.workoutSessions) setWorkoutSessions(d.workoutSessions);
         if (d.weeklySplit) setWeeklySplit(d.weeklySplit);
+        setSplitHistory(d.splitHistory || {});
         setBackupMsg("✓ Data restored! Welcome back.");
       } catch {
         setBackupMsg("✗ Invalid backup file.");
@@ -580,6 +667,7 @@ export default function GymTracker() {
       //setCompletedExercises({});
       setCustomExercises({});
       setWeeklySplit(DEFAULT_SPLIT);
+      setSplitHistory({});
       setWorkoutSessions({});
       setDayStatus({});
 
@@ -2213,7 +2301,7 @@ export default function GymTracker() {
                 style={{ fontSize: "11px", color: "#2A2D3A", lineHeight: 1.6 }}
               >
                 Backup includes: weight logs, custom exercises, weekly split,
-                and completion history.
+                split snapshots, and completion history.
               </div>
             </div>
           </div>
@@ -2246,12 +2334,20 @@ export default function GymTracker() {
       {splitEditorDay && (
         <SplitEditorModal
           day={splitEditorDay}
-          currentMuscles={weeklySplit[splitEditorDay] || []}
+          currentMuscles={getVisibleSplitForDate(
+            selectedDateStr,
+            splitEditorDay,
+            weekOffset,
+          )}
           muscleGroups={muscleGroups}
           onClose={() => setSplitEditorDay(null)}
-          onSave={(muscles) =>
-            setWeeklySplit((p) => ({ ...p, [splitEditorDay]: muscles }))
-          }
+          onSave={(muscles) => {
+            if (weekOffset === 0) {
+              setWeeklySplit((p) => ({ ...p, [splitEditorDay]: muscles }));
+            } else {
+              updateSplitSnapshot(selectedDateStr, muscles);
+            }
+          }}
         />
       )}
     </div>
