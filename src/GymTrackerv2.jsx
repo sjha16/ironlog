@@ -271,6 +271,52 @@ export default function GymTracker() {
     0,
   );
   const totalLogged = Object.keys(weightLogs).length;
+  const workoutStreak = useMemo(() => {
+    const workoutDates = new Set();
+    const datePattern = /\d{4}-\d{2}-\d{2}/;
+
+    Object.entries(workoutSessions).forEach(([dateStr, sessions]) => {
+      if (Array.isArray(sessions) && sessions.length > 0) {
+        workoutDates.add(dateStr);
+      }
+    });
+
+    Object.values(weightLogs).forEach((logs) => {
+      Object.keys(logs || {}).forEach((dateKey) => {
+        const match = dateKey.match(datePattern);
+        if (match) workoutDates.add(match[0]);
+      });
+    });
+
+    const sortedDates = [...workoutDates].sort();
+    const formatDay = (date) =>
+      `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+    let current = 0;
+    const latestDateStr = sortedDates[sortedDates.length - 1];
+    const cursor = latestDateStr ? new Date(`${latestDateStr}T00:00:00`) : null;
+
+    while (cursor && workoutDates.has(formatDay(cursor))) {
+      current += 1;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+
+    let best = 0;
+    let running = 0;
+    let previous = null;
+
+    sortedDates.forEach((dateStr) => {
+      const date = new Date(`${dateStr}T00:00:00`);
+      const isConsecutive =
+        previous && Math.round((date - previous) / 86400000) === 1;
+
+      running = isConsecutive ? running + 1 : 1;
+      best = Math.max(best, running);
+      previous = date;
+    });
+
+    return { current, best };
+  }, [weightLogs, workoutSessions]);
 
   // saveWeights: uses selected day’s actual calendar date
   const saveWeights = useCallback(
@@ -1755,6 +1801,14 @@ export default function GymTracker() {
             >
               {[
                 {
+                  label: "Workout Streak",
+                  value: workoutStreak.current,
+                  suffix: workoutStreak.current === 1 ? "day" : "days",
+                  helper: `Best: ${workoutStreak.best}`,
+                  icon: "🔥",
+                  color: "#FF9F1C",
+                },
+                {
                   label: "Exercises Logged",
                   value: totalLogged,
                   icon: "📊",
@@ -1800,6 +1854,18 @@ export default function GymTracker() {
                     }}
                   >
                     {s.value}
+                    {s.suffix && (
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: "800",
+                          color: "#666",
+                          marginLeft: "5px",
+                        }}
+                      >
+                        {s.suffix}
+                      </span>
+                    )}
                   </div>
                   <div
                     style={{
@@ -1811,6 +1877,18 @@ export default function GymTracker() {
                   >
                     {s.label}
                   </div>
+                  {s.helper && (
+                    <div
+                      style={{
+                        fontSize: "10px",
+                        color: "#555",
+                        marginTop: "4px",
+                        fontWeight: "700",
+                      }}
+                    >
+                      {s.helper}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
